@@ -1,0 +1,2584 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<template id="__bundler_thumbnail">
+  <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+    <rect width="100" height="100" fill="#0b081c"/>
+    <circle cx="50" cy="50" r="27" fill="none" stroke="#e8ab41" stroke-width="1.4"/>
+    <circle cx="50" cy="50" r="20" fill="none" stroke="#8f86c0" stroke-width="0.8"/>
+    <line x1="23" y1="50" x2="77" y2="50" stroke="#8f86c0" stroke-width="0.8"/>
+    <line x1="50" y1="23" x2="50" y2="77" stroke="#8f86c0" stroke-width="0.8"/>
+    <circle cx="66" cy="38" r="2.6" fill="#e8ab41"/>
+    <circle cx="40" cy="62" r="2" fill="#a99ecf"/>
+    <circle cx="50" cy="50" r="2.2" fill="#f2f0fc"/>
+  </svg>
+</template>
+<x-dc>
+<helmet>
+<style>
+  html, body { margin: 0; padding: 0; background: #0b081c; }
+  a { color: #4da4d9; text-decoration: none; }
+  a:hover { color: #7cc0e8; }
+  input { color-scheme: dark; }
+  input::placeholder { color: #5a5090; }
+  input[type="range"] { accent-color: #e8ab41; }
+</style>
+<script type="module">
+  // Static, discoverable references \u2014 so bundling/export can inline these engines.
+  // (A runtime `import(new URL(...))` inside componentDidMount is invisible to a
+  // static-asset bundler; once exported standalone there's no sibling file left to
+  // fetch, the import throws, and \u2014 as happened before \u2014 that can kill anything
+  // gated on it. These plain imports run at page load, well before mount.)
+  import * as EPH from './ephem.js';
+  import * as FRAMING from './framing.js';
+  import { CITIES } from './cities.js';
+  window.__ORBO_EPH = EPH;
+  window.__ORBO_FRAMING = FRAMING;
+  window.__ORBO_CITIES = CITIES;
+</script>
+</helmet>
+<div style="min-height:100vh;background:#0b081c;display:flex;justify-content:center;font-family:'Avenir Next','Century Gothic',Futura,'Trebuchet MS',sans-serif;color:#dcd7f0;">
+  <div style="width:100%;max-width:430px;min-height:100vh;display:flex;flex-direction:column;position:relative;overflow:hidden;box-shadow:0 0 90px rgba(0,0,0,0.85);background-color:#0c081f;background-image:linear-gradient(180deg, #0c081f 0%, #131a3e 24%, #26496e 46%, #7e5f2e 68%, #94522b 82%, #7c3a2f 94%, #632a2a 100%);background-repeat:no-repeat;background-size:100% 100%;">
+    <div style="position:absolute;inset:0;pointer-events:none;background-image:radial-gradient(1.6px 1.6px at 31px 27px, rgba(246,244,255,0.95), transparent 60%),radial-gradient(1px 1px at 118px 63px, rgba(236,232,248,0.7), transparent 60%),radial-gradient(1.3px 1.3px at 74px 141px, rgba(196,208,248,0.8), transparent 60%),radial-gradient(0.9px 0.9px at 163px 108px, rgba(236,232,248,0.55), transparent 60%),radial-gradient(1.1px 1.1px at 22px 189px, rgba(255,240,220,0.6), transparent 60%),radial-gradient(0.8px 0.8px at 201px 161px, rgba(236,232,248,0.5), transparent 60%),radial-gradient(1.4px 1.4px at 147px 217px, rgba(214,224,255,0.75), transparent 60%),radial-gradient(0.9px 0.9px at 55px 88px, rgba(236,232,248,0.6), transparent 60%);background-size:231px 231px,199px 199px,253px 253px,181px 181px,269px 269px,211px 211px,241px 241px,223px 223px;mask-image:linear-gradient(180deg, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.85) 34%, rgba(0,0,0,0.4) 52%, transparent 72%);-webkit-mask-image:linear-gradient(180deg, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.85) 34%, rgba(0,0,0,0.4) 52%, transparent 72%);"></div>
+
+    <div style="padding:20px 22px 8px 22px;display:flex;flex-direction:column;gap:7px;position:relative;">
+      <div style="display:flex;align-items:baseline;justify-content:space-between;">
+        <div style="font-size:11px;letter-spacing:0.24em;text-transform:uppercase;color:#8f86c0;">Orbo Astrolabe</div>
+        <div style="font-size:10px;letter-spacing:0.2em;text-transform:uppercase;color:#5a5090;">prototype</div>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:center;gap:6px;min-height:28px;">
+        <canvas ref="{{ moonHeadRef }}" width="32" height="32" style="width:16px;height:16px;border-radius:50%;flex-shrink:0;"></canvas>
+        <div ref="{{ skyRef }}" style="font-size:22px;line-height:1.25;color:#f2f0fc;letter-spacing:0.02em;text-align:center;">…</div>
+      </div>
+      <sc-if value="{{ dateUnder }}" hint-placeholder-val="{{ true }}">
+        <div style="display:flex;align-items:center;justify-content:center;gap:7px;min-height:14px;">
+          <div ref="{{ civilRef }}" onPointerDown="{{ clockDown }}" onPointerUp="{{ clockUp }}" onPointerLeave="{{ clockCancel }}" style="font-size:12px;color:#a99ecf;font-variant-numeric:tabular-nums;white-space:nowrap;cursor:pointer;user-select:none;-webkit-user-select:none;">&nbsp;</div>
+          <sc-if value="{{ seatToggleShown }}" hint-placeholder-val="{{ false }}">
+            <div onClick="{{ toggleSeats }}" title="bring in a seat" style="cursor:pointer;font-size:11px;line-height:1;color:#6a5fa0;padding:2px 4px;border:1px solid rgba(143,134,192,0.28);border-radius:6px;">&#8645;</div>
+          </sc-if>
+        </div>
+      </sc-if>
+      <div ref="{{ gearRef }}" style="font-size:10.5px;letter-spacing:0.16em;text-transform:uppercase;color:#e8ab41;min-height:14px;white-space:nowrap;text-align:center;">&nbsp;</div>
+      <sc-if value="{{ showSeats }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;gap:8px;margin-top:2px;">
+          <div onClick="{{ tapPlateSeat }}" style="flex:1;cursor:pointer;border:1px solid {{ seatPlateBd }};border-radius:10px;padding:6px 9px;background:rgba(0,0,0,0.22);display:flex;flex-direction:column;gap:1px;min-width:0;">
+            <div style="font-size:8px;letter-spacing:0.2em;text-transform:uppercase;color:#5a5090;">the plate</div>
+            <div style="font-size:11px;color:{{ seatPlateCol }};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ seatPlateTitle }}</div>
+            <div style="font-size:9px;color:#8f86c0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ seatPlateSub }}</div>
+            <sc-if value="{{ dateInPlate }}" hint-placeholder-val="{{ false }}">
+              <div ref="{{ civilRef }}" style="font-size:9px;color:#e0c48f;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px;">&nbsp;</div>
+            </sc-if>
+          </div>
+          <div onClick="{{ tapReteSeat }}" style="flex:1;cursor:pointer;border:1px solid {{ seatReteBd }};border-radius:10px;padding:6px 9px;background:rgba(0,0,0,0.22);display:flex;flex-direction:column;gap:1px;min-width:0;">
+            <div style="font-size:8px;letter-spacing:0.2em;text-transform:uppercase;color:#5a5090;">the rete</div>
+            <div style="font-size:11px;color:{{ seatReteCol }};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ seatReteTitle }}</div>
+            <div style="font-size:9px;color:#8f86c0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ seatReteSub }}</div>
+            <sc-if value="{{ dateInRete }}" hint-placeholder-val="{{ false }}">
+              <div ref="{{ civilRef }}" style="font-size:9px;color:#a99ecf;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px;">&nbsp;</div>
+            </sc-if>
+          </div>
+        </div>
+      </sc-if>
+      <sc-if value="{{ pkPlate }}" hint-placeholder-val="{{ false }}">
+        <div style="border:1px solid rgba(190,184,226,0.2);border-radius:12px;background:rgba(8,5,24,0.92);padding:8px;display:flex;flex-direction:column;gap:5px;">
+          <div style="display:flex;justify-content:space-between;align-items:baseline;">
+            <div style="font-size:8.5px;letter-spacing:0.2em;text-transform:uppercase;color:#8f86c0;">who is read — the plate</div>
+            <div onClick="{{ closeSeats }}" style="font-size:12px;color:#5a5090;cursor:pointer;padding:0 3px;">×</div>
+          </div>
+          <sc-for list="{{ plateOpts }}" as="po" hint-placeholder-count="2">
+            <div onClick="{{ po.tap }}" style="cursor:pointer;border:1px solid {{ po.bd }};border-radius:8px;padding:6px 9px;display:flex;justify-content:space-between;align-items:baseline;gap:8px;">
+              <div style="font-size:11px;color:{{ po.col }};">{{ po.name }}</div>
+              <div style="font-size:9px;color:#8f86c0;white-space:nowrap;">{{ po.sub }}</div>
+            </div>
+          </sc-for>
+        </div>
+      </sc-if>
+      <sc-if value="{{ pkRete }}" hint-placeholder-val="{{ false }}">
+        <div style="border:1px solid rgba(190,184,226,0.2);border-radius:12px;background:rgba(8,5,24,0.92);padding:8px;display:flex;flex-direction:column;gap:5px;max-height:180px;overflow-y:auto;">
+          <div style="display:flex;justify-content:space-between;align-items:baseline;">
+            <div style="font-size:8.5px;letter-spacing:0.2em;text-transform:uppercase;color:#8f86c0;">who acts — the rete</div>
+            <div onClick="{{ closeSeats }}" style="font-size:12px;color:#5a5090;cursor:pointer;padding:0 3px;">×</div>
+          </div>
+          <sc-for list="{{ reteOpts }}" as="ro" hint-placeholder-count="3">
+            <div onClick="{{ ro.tap }}" style="cursor:pointer;border:1px solid {{ ro.bd }};border-radius:8px;padding:6px 9px;display:flex;justify-content:space-between;align-items:baseline;gap:8px;">
+              <div style="font-size:11px;color:{{ ro.col }};">{{ ro.name }}</div>
+              <div style="font-size:9px;color:#8f86c0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ ro.sub }}</div>
+            </div>
+          </sc-for>
+        </div>
+      </sc-if>
+    </div>
+
+    <div style="position:relative;width:100%;perspective:1400px;">
+      <div style="position:relative;width:100%;transform-style:preserve-3d;transition:transform 0.7s cubic-bezier(0.4,0.1,0.2,1);transform:{{ flipTf }};">
+        <canvas ref="{{ canvasRef }}" style="display:block;width:100%;touch-action:none;cursor:crosshair;backface-visibility:hidden;-webkit-backface-visibility:hidden;pointer-events:{{ frontPe }};"></canvas>
+
+        <div style="position:absolute;inset:15px;border-radius:50%;transform:rotateY(180deg);backface-visibility:hidden;-webkit-backface-visibility:hidden;pointer-events:{{ backPe }};background:radial-gradient(closest-side, #1a1348 0%, #181143 62%, #100b30 100%);border:1.3px solid rgba(190,184,226,0.3);box-shadow:0 8px 22px rgba(0,0,0,0.6);overflow:hidden;">
+          <svg viewBox="0 0 100 100" style="position:absolute;inset:0;width:100%;height:100%;">
+            <circle cx="50" cy="50" r="49.3" fill="none" stroke="rgba(190,184,226,0.2)" stroke-width="0.35"></circle>
+            <circle cx="50" cy="50" r="38" fill="none" stroke="rgba(190,184,226,0.16)" stroke-width="0.3"></circle>
+            <sc-for list="{{ segs }}" as="sg">
+              <path d="{{ sg.d }}" fill="{{ sg.fill }}" stroke="rgba(190,184,226,0.14)" stroke-width="0.25" onClick="{{ sg.tap }}" style="cursor:pointer;"></path>
+            </sc-for>
+            <sc-for list="{{ segDots }}" as="sd2">
+              <circle cx="{{ sd2.x }}" cy="{{ sd2.y }}" r="0.7" fill="#e8ab41"></circle>
+            </sc-for>
+          </svg>
+          <sc-for list="{{ segs }}" as="sg">
+            <div style="position:absolute;left:{{ sg.gl }};top:{{ sg.gt }};transform:translate(-50%,-50%);pointer-events:none;font-size:19px;line-height:1;color:{{ sg.col }};font-family:'Noto Sans Symbols 2','Segoe UI Symbol','Apple Symbols',serif;">{{ sg.glyph }}</div>
+          </sc-for>
+
+          <div style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:52%;height:58%;display:flex;flex-direction:column;">
+            <datalist id="orbo-cities">
+              <sc-for list="{{ cityOpts }}" as="cn" hint-placeholder-count="0">
+                <option value="{{ cn }}"></option>
+              </sc-for>
+            </datalist>
+
+            <sc-if value="{{ pLegend }}" hint-placeholder-val="{{ true }}">
+              <div style="text-align:center;font-size:9px;letter-spacing:0.22em;text-transform:uppercase;color:#8f86c0;margin-bottom:8px;">The back — you</div>
+              <div style="flex:1;overflow-y:auto;display:flex;flex-direction:column;">
+                <sc-for list="{{ legend }}" as="lg">
+                  <div onClick="{{ lg.tap }}" style="display:flex;align-items:center;gap:8px;padding:3.5px 2px;cursor:pointer;opacity:{{ lg.op }};">
+                    <div style="font-size:12px;color:#a89ecf;width:16px;text-align:center;">{{ lg.glyph }}</div>
+                    <div style="font-size:11px;color:#dcd7f0;">{{ lg.name }}</div>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ pNatal }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:8px;">
+                <div style="font-size:9px;letter-spacing:0.2em;text-transform:uppercase;color:#e8ab41;">♈︎ Natal chart</div>
+                <div onClick="{{ closePanel }}" style="font-size:12px;color:#5a5090;cursor:pointer;padding:0 2px;">×</div>
+              </div>
+              <div style="flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:7px;">
+                <input type="date" value="{{ natalDate }}" onChange="{{ onNatalDate }}" style="width:100%;box-sizing:border-box;background:rgba(0,0,0,0.28);border:1px solid rgba(190,184,226,0.22);border-radius:8px;padding:7px 8px;color:#ece8f8;font-size:11.5px;outline:none;font-family:inherit;">
+                <input type="time" value="{{ natalTime }}" onChange="{{ onNatalTime }}" style="width:100%;box-sizing:border-box;background:rgba(0,0,0,0.28);border:1px solid rgba(190,184,226,0.22);border-radius:8px;padding:7px 8px;color:#ece8f8;font-size:11.5px;outline:none;font-family:inherit;">
+                <input type="text" list="orbo-cities" placeholder="birthplace — type a city" value="{{ natalPlace }}" onChange="{{ onNatalPlace }}" style="width:100%;box-sizing:border-box;background:rgba(0,0,0,0.28);border:1px solid rgba(190,184,226,0.22);border-radius:8px;padding:7px 8px;color:#ece8f8;font-size:11.5px;outline:none;font-family:inherit;">
+                <div style="font-size:9.5px;color:{{ natalCityCol }};line-height:1.4;">{{ natalCityNote }}</div>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ pLoc }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:8px;">
+                <div style="font-size:9px;letter-spacing:0.2em;text-transform:uppercase;color:#e8ab41;">♉︎ Here &amp; now</div>
+                <div onClick="{{ closePanel }}" style="font-size:12px;color:#5a5090;cursor:pointer;padding:0 2px;">×</div>
+              </div>
+              <div style="flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:8px;">
+                <div style="font-size:11px;color:#a89ecf;font-variant-numeric:tabular-nums;">{{ locStr }}</div>
+                <div onClick="{{ useMyLocation }}" style="font-size:9px;letter-spacing:0.14em;text-transform:uppercase;color:#4da4d9;cursor:pointer;border:1px solid rgba(77,164,217,0.4);border-radius:999px;padding:6px 10px;align-self:flex-start;">use my location</div>
+                <input type="text" list="orbo-cities" placeholder="or type a city" value="{{ locPlace }}" onChange="{{ onLocPlace }}" style="width:100%;box-sizing:border-box;background:rgba(0,0,0,0.28);border:1px solid rgba(190,184,226,0.22);border-radius:8px;padding:7px 8px;color:#ece8f8;font-size:11.5px;outline:none;font-family:inherit;">
+                <div style="font-size:9.5px;color:#5a5090;line-height:1.5;">{{ locNote }}</div>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ pPlanets }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:8px;">
+                <div style="font-size:9px;letter-spacing:0.2em;text-transform:uppercase;color:#e8ab41;">♊︎ Planets</div>
+                <div onClick="{{ closePanel }}" style="font-size:12px;color:#5a5090;cursor:pointer;padding:0 2px;">×</div>
+              </div>
+              <div style="flex:1;overflow-y:auto;">
+                <div style="display:flex;flex-wrap:wrap;gap:11px 8px;justify-content:center;padding-top:2px;">
+                  <sc-for list="{{ planetChips }}" as="ch">
+                    <div onClick="{{ ch.tap }}" style="display:flex;flex-direction:column;align-items:center;gap:4px;width:56px;cursor:pointer;">
+                      <div style="width: 29px; height: 29px; border-radius: 50%; border: 1px solid {{ ch.bd }}; background: rgba(0,0,0,0.22); display: flex; align-items: center; justify-content: center; font-size: 16px; color: {{ ch.col }}; box-sizing: border-box">{{ ch.glyph }}</div>
+                      <div style="font-size:8.5px;color:{{ ch.txt }};text-align:center;line-height:1.2;">{{ ch.name }}</div>
+                    </div>
+                  </sc-for>
+                </div>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ pMoon }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:8px;">
+                <div style="font-size:9px;letter-spacing:0.2em;text-transform:uppercase;color:#e8ab41;">&#9803;&#65038; Moon</div>
+                <div onClick="{{ closePanel }}" style="font-size:12px;color:#5a5090;cursor:pointer;padding:0 2px;">&#215;</div>
+              </div>
+              <div style="flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:9px;align-items:center;padding-top:2px;">
+                <div onClick="{{ moonPhaseTap }}" style="display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;" title="tap to jump to the next new or full moon">
+                  <canvas ref="{{ moonCanvasRef }}" width="72" height="72" style="width:52px;height:52px;"></canvas>
+                  <div ref="{{ moonNameRef }}" style="font-size:12px;color:#f2f0fc;letter-spacing:0.03em;">&hellip;</div>
+                  <div ref="{{ moonPctRef }}" style="font-size:9.5px;color:#a89ecf;">&hellip;</div>
+                </div>
+                <div style="width:100%;display:flex;flex-direction:column;gap:5px;">
+                  <div style="display:flex;justify-content:space-between;font-size:10px;gap:8px;"><span style="color:#a89ecf;">sign</span><span ref="{{ moonSignRef }}" style="color:#dcd7f0;text-align:right;">&hellip;</span></div>
+                  <div style="display:flex;justify-content:space-between;font-size:10px;gap:8px;"><span style="color:#a89ecf;">next ingress</span><span ref="{{ moonIngressRef }}" style="color:#dcd7f0;text-align:right;">&hellip;</span></div>
+                  <div style="display:flex;justify-content:space-between;font-size:10px;gap:8px;"><span style="color:#a89ecf;">void of course</span><span style="color:#5a5090;font-style:italic;">coming soon</span></div>
+                </div>
+                <div style="font-size:8.5px;color:#5a5090;text-align:center;line-height:1.4;">tap the moon to jump to the next new or full moon</div>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ pObjects }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:8px;">
+                <div style="font-size:9px;letter-spacing:0.2em;text-transform:uppercase;color:#e8ab41;">♏︎ Objects</div>
+                <div onClick="{{ closePanel }}" style="font-size:12px;color:#5a5090;cursor:pointer;padding:0 2px;">×</div>
+              </div>
+              <div style="flex:1;overflow-y:auto;">
+                <div style="font-size:8.5px;letter-spacing:0.18em;text-transform:uppercase;color:#5a5090;margin:2px 0 8px;">Bodies</div>
+                <div style="display:flex;flex-wrap:wrap;gap:11px 8px;justify-content:center;">
+                  <sc-for list="{{ objectChips }}" as="ch">
+                    <div onClick="{{ ch.tap }}" style="display:flex;flex-direction:column;align-items:center;gap:4px;width:62px;cursor:pointer;">
+                      <div style="width: 25px; height: 25px; border-radius: 50%; border: 1px solid {{ ch.bd }}; background: rgba(0,0,0,0.22); display: flex; align-items: center; justify-content: center; font-size: 15px; color: {{ ch.col }}; box-sizing: border-box">{{ ch.glyph }}</div>
+                      <div style="font-size:8px;color:{{ ch.txt }};text-align:center;line-height:1.2;">{{ ch.name }}</div>
+                    </div>
+                  </sc-for>
+                </div>
+                <div style="font-size:8.5px;letter-spacing:0.18em;text-transform:uppercase;color:#5a5090;margin:16px 0 8px;">Points</div>
+                <div style="display:flex;flex-wrap:wrap;gap:11px 8px;justify-content:center;">
+                  <sc-for list="{{ pointChips }}" as="ch">
+                    <div onClick="{{ ch.tap }}" style="display:flex;flex-direction:column;align-items:center;gap:4px;width:62px;cursor:pointer;">
+                      <div style="width: 25px; height: 25px; border-radius: 50%; border: 1px solid {{ ch.bd }}; background: rgba(0,0,0,0.22); display: flex; align-items: center; justify-content: center; font-size: 13px; color: {{ ch.col }}; box-sizing: border-box">{{ ch.glyph }}</div>
+                      <div style="font-size:8px;color:{{ ch.txt }};text-align:center;line-height:1.2;">{{ ch.name }}</div>
+                    </div>
+                  </sc-for>
+                </div>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ pAspects }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:8px;">
+                <div style="font-size:9px;letter-spacing:0.2em;text-transform:uppercase;color:#e8ab41;">♍︎ Aspects</div>
+                <div onClick="{{ closePanel }}" style="font-size:12px;color:#5a5090;cursor:pointer;padding:0 2px;">×</div>
+              </div>
+              <div style="flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:9px;">
+                <div style="display:flex;gap:5px;justify-content:space-between;">
+                  <sc-for list="{{ aspectChips }}" as="ch">
+                    <div onClick="{{ ch.tap }}" style="flex:1;text-align:center;padding:7px 0;border-radius:8px;border:1px solid {{ ch.bd }};cursor:pointer;background:rgba(0,0,0,0.2);font-size:13px;color:{{ ch.col }};">{{ ch.glyph }}</div>
+                  </sc-for>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:3px;">
+                  <div style="display:flex;justify-content:space-between;font-size:9.5px;color:#a89ecf;"><span>orb</span><span>{{ orbVal }}°</span></div>
+                  <input type="range" min="1" max="8" step="0.5" value="{{ orbVal }}" onChange="{{ onOrb }}" style="width:100%;margin:0;">
+                </div>
+                <div onClick="{{ toggleWeb }}" style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:2px 0;cursor:pointer;">
+                  <div style="font-size:11px;color:#dcd7f0;">aspect web at rest</div>
+                  <div style="width:28px;height:17px;border-radius:9px;background:{{ webBg }};position:relative;transition:background 0.2s;flex-shrink:0;">
+                    <div style="position:absolute;top:2px;left:{{ webKnob }};width:13px;height:13px;border-radius:50%;background:#f2f0fc;transition:left 0.2s;"></div>
+                  </div>
+                </div>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ pSkin }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:8px;">
+                <div style="font-size:9px;letter-spacing:0.2em;text-transform:uppercase;color:#e8ab41;">♌︎ Appearance</div>
+                <div onClick="{{ closePanel }}" style="font-size:12px;color:#5a5090;cursor:pointer;padding:0 2px;">×</div>
+              </div>
+              <div style="flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:5px;">
+                <div onClick="{{ toggleHouseNums }}" style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:3px 0;cursor:pointer;">
+                  <div style="font-size:11px;color:#dcd7f0;">house numbers</div>
+                  <div style="width:28px;height:17px;border-radius:9px;background:{{ houseBg }};position:relative;transition:background 0.2s;flex-shrink:0;">
+                    <div style="position:absolute;top:2px;left:{{ houseKnob }};width:13px;height:13px;border-radius:50%;background:#f2f0fc;transition:left 0.2s;"></div>
+                  </div>
+                </div>
+                <div style="font-size:9px;color:#5a5090;line-height:1.4;">whole sign — counted from the rising sign</div>
+                <div onClick="{{ toggleParallax }}" style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:3px 0;cursor:pointer;">
+                  <div style="font-size:11px;color:#dcd7f0;">star parallax</div>
+                  <div style="width:28px;height:17px;border-radius:9px;background:{{ parBg }};position:relative;transition:background 0.2s;flex-shrink:0;">
+                    <div style="position:absolute;top:2px;left:{{ parKnob }};width:13px;height:13px;border-radius:50%;background:#f2f0fc;transition:left 0.2s;"></div>
+                  </div>
+                </div>
+                <div style="font-size:9px;color:#5a5090;line-height:1.4;">the deep stars lag the wheel — depth appears when you spin it</div>
+                <div style="font-size:11px;color:#dcd7f0;padding:5px 0 2px;">decan faces</div>
+                <div style="display:flex;gap:5px;">
+                  <sc-for list="{{ faceChips }}" as="fc" hint-placeholder-count="2">
+                    <div onClick="{{ fc.tap }}" style="flex:1;text-align:center;padding:6px 0;border-radius:8px;border:1px solid {{ fc.bd }};background:{{ fc.bg }};cursor:pointer;font-size:10px;color:{{ fc.col }};">{{ fc.name }}</div>
+                  </sc-for>
+                </div>
+                <div style="font-size:9px;color:#5a5090;line-height:1.4;">{{ facesNote }}</div>
+                <div style="font-size:11px;color:#dcd7f0;padding:5px 0 2px;">rim metal</div>
+                <div style="display:flex;gap:5px;">
+                  <sc-for list="{{ metalChips }}" as="mc" hint-placeholder-count="3">
+                    <div onClick="{{ mc.tap }}" style="flex:1;text-align:center;padding:6px 0;border-radius:8px;border:1px solid {{ mc.bd }};background:{{ mc.bg }};cursor:pointer;font-size:10px;color:{{ mc.col }};">{{ mc.name }}</div>
+                  </sc-for>
+                </div>
+                <div style="font-size:9px;color:#5a5090;line-height:1.4;">{{ metalNote }}</div>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ pTransport }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:8px;">
+                <div style="font-size:9px;letter-spacing:0.2em;text-transform:uppercase;color:#e8ab41;">♑︎ Gears</div>
+                <div onClick="{{ closePanel }}" style="font-size:12px;color:#5a5090;cursor:pointer;padding:0 2px;">×</div>
+              </div>
+              <div style="flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:8px;">
+                <div style="display:flex;flex-direction:column;gap:3px;">
+                  <div style="display:flex;justify-content:space-between;font-size:9.5px;color:#a89ecf;"><span>play speed</span><span>{{ speedVal }} {{ speedUnit }}</span></div>
+                  <input type="range" min="1" max="48" step="1" value="{{ speedVal }}" onChange="{{ onSpeed }}" style="width:100%;margin:0;">
+                </div>
+                <div style="display:flex;flex-direction:column;gap:3px;">
+                  <div style="display:flex;justify-content:space-between;font-size:9.5px;color:#a89ecf;"><span>rim gearing</span><span>{{ gearVal }}</span></div>
+                  <input type="range" min="0" max="3" step="0.25" value="{{ gearVal }}" onChange="{{ onGear }}" style="width:100%;margin:0;">
+                </div>
+                <div style="display:flex;flex-direction:column;gap:3px;">
+                  <div style="display:flex;justify-content:space-between;font-size:9.5px;color:#a89ecf;"><span>snap magnetism</span><span>{{ magVal }}</span></div>
+                  <input type="range" min="0" max="1" step="0.05" value="{{ magVal }}" onChange="{{ onMag }}" style="width:100%;margin:0;">
+                </div>
+                <div onClick="{{ toggleHaptics }}" style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:2px 0;cursor:pointer;">
+                  <div style="font-size:11px;color:#dcd7f0;">haptics</div>
+                  <div style="width:28px;height:17px;border-radius:9px;background:{{ hapBg }};position:relative;transition:background 0.2s;flex-shrink:0;">
+                    <div style="position:absolute;top:2px;left:{{ hapKnob }};width:13px;height:13px;border-radius:50%;background:#f2f0fc;transition:left 0.2s;"></div>
+                  </div>
+                </div>
+                <div onClick="{{ toggleIcon }}" style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:2px 0;cursor:pointer;">
+                  <div style="font-size:11px;color:#dcd7f0;">play icon at center</div>
+                  <div style="width:28px;height:17px;border-radius:9px;background:{{ iconBg }};position:relative;transition:background 0.2s;flex-shrink:0;">
+                    <div style="position:absolute;top:2px;left:{{ iconKnob }};width:13px;height:13px;border-radius:50%;background:#f2f0fc;transition:left 0.2s;"></div>
+                  </div>
+                </div>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ pPeople }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:8px;">
+                <div style="font-size:9px;letter-spacing:0.2em;text-transform:uppercase;color:#e8ab41;">♎︎ People</div>
+                <div onClick="{{ closePanel }}" style="font-size:12px;color:#5a5090;cursor:pointer;padding:0 2px;">×</div>
+              </div>
+              <div style="font-size:9px;color:#8f86c0;line-height:1.45;margin-bottom:8px;">their moment, saved as a person. the composite plate lives on ♓.</div>
+              <div style="flex:1;overflow-y:auto;display:flex;flex-direction:column;">
+                <sc-for list="{{ people }}" as="ev" hint-placeholder-count="0">
+                  <div onClick="{{ ev.go }}" style="display:flex;align-items:center;justify-content:space-between;gap:6px;padding:7px 0;border-bottom:1px solid rgba(190,184,226,0.1);cursor:pointer;">
+                    <div style="min-width:0;">
+                      <div style="font-size:11px;color:#dcd7f0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ ev.name }}</div>
+                      <div style="font-size:8.5px;color:#857cb5;font-variant-numeric:tabular-nums;">{{ ev.whenStr }}</div>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:7px;flex-shrink:0;">
+                      <div onClick="{{ ev.cal }}" title="add to calendar" style="font-size:12px;color:#e8ab41;padding:0 2px;">＋</div>
+                      <div onClick="{{ ev.del }}" style="font-size:11px;color:#5a5090;padding:0 2px;">×</div>
+                    </div>
+                  </div>
+                </sc-for>
+                <sc-if value="{{ noPeople }}" hint-placeholder-val="{{ false }}">
+                  <div style="font-size:9.5px;color:#5a5090;line-height:1.5;padding-top:4px;">no one yet — add them below</div>
+                </sc-if>
+                <div style="margin-top:auto;display:flex;flex-direction:column;gap:5px;padding-top:8px;">
+                  <input type="text" placeholder="name" value="{{ pplName }}" onChange="{{ onPplName }}" style="width:100%;box-sizing:border-box;background:rgba(0,0,0,0.28);border:1px solid rgba(190,184,226,0.22);border-radius:8px;padding:5px 8px;color:#ece8f8;font-size:10.5px;outline:none;font-family:inherit;">
+                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;">
+                    <input type="date" value="{{ pplDate }}" onChange="{{ onPplDate }}" style="width:100%;box-sizing:border-box;background:rgba(0,0,0,0.28);border:1px solid rgba(190,184,226,0.22);border-radius:8px;padding:5px 6px;color:#ece8f8;font-size:9.5px;outline:none;font-family:inherit;">
+                    <input type="time" value="{{ pplTime }}" onChange="{{ onPplTime }}" style="width:100%;box-sizing:border-box;background:rgba(0,0,0,0.28);border:1px solid rgba(190,184,226,0.22);border-radius:8px;padding:5px 6px;color:#ece8f8;font-size:9.5px;outline:none;font-family:inherit;">
+                  </div>
+                  <div style="display:grid;grid-template-columns:1fr auto;gap:5px;">
+                    <input type="text" list="orbo-cities" placeholder="birthplace — city" value="{{ pplPlace }}" onChange="{{ onPplPlace }}" style="width:100%;box-sizing:border-box;background:rgba(0,0,0,0.28);border:1px solid rgba(190,184,226,0.22);border-radius:8px;padding:5px 8px;color:#ece8f8;font-size:10.5px;outline:none;font-family:inherit;">
+                    <div onClick="{{ addPerson }}" style="font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:#e8ab41;border:1px solid rgba(232,171,65,0.45);border-radius:8px;padding:5px 8px;cursor:pointer;display:flex;align-items:center;">add</div>
+                  </div>
+                  <div style="font-size:9px;color:{{ pplCityCol }};line-height:1.4;">{{ pplCityNote }}</div>
+                </div>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ pComposite }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:8px;">
+                <div style="font-size:9px;letter-spacing:0.2em;text-transform:uppercase;color:#e8ab41;">♓︎ Composite Framing</div>
+                <div onClick="{{ closePanel }}" style="font-size:12px;color:#5a5090;cursor:pointer;padding:0 2px;">×</div>
+              </div>
+              <div style="font-size:9.5px;color:#8f86c0;line-height:1.5;margin-bottom:11px;">two charts dissolved into one — the short-arc midpoints of you and the sky, poured into the plate as gilt beads.</div>
+              <sc-if value="{{ hasNatal }}" hint-placeholder-val="{{ true }}">
+                <div onClick="{{ toggleComposite }}" style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 11px;border-radius:10px;border:1px solid {{ compBd }};background:{{ compFill }};cursor:pointer;">
+                  <div style="min-width:0;">
+                    <div style="font-size:10.5px;color:#f0e6cf;">you × this moment</div>
+                    <div style="font-size:9px;color:#8f86c0;line-height:1.4;margin-top:1px;">{{ compNote }}</div>
+                  </div>
+                  <div style="width:28px;height:17px;border-radius:9px;background:{{ compBg }};position:relative;transition:background 0.2s;flex-shrink:0;">
+                    <div style="position:absolute;top:2px;left:{{ compKnob }};width:13px;height:13px;border-radius:50%;background:#f6ecd2;transition:left 0.2s;"></div>
+                  </div>
+                </div>
+                <div style="font-size:9px;color:#5a5090;line-height:1.5;margin-top:11px;">the beads rest gilt beneath the sky, each riding a channel cut around its natal mark. grabbing a bead to run its channel comes next.</div>
+                <div style="font-size:9px;color:#5a5090;line-height:1.5;margin-top:9px;padding-top:9px;border-top:1px solid rgba(190,184,226,0.1);">other pairings — you × a person, person × person — wait on the roster in ♎ People.</div>
+              </sc-if>
+              <sc-if value="{{ noNatal }}" hint-placeholder-val="{{ false }}">
+                <div onClick="{{ goNatal }}" style="padding:12px;border-radius:10px;border:1px dashed rgba(190,184,226,0.3);background:rgba(0,0,0,0.18);cursor:pointer;">
+                  <div style="font-size:10.5px;color:#dcd7f0;">engrave your natal first →</div>
+                  <div style="font-size:9px;color:#8f86c0;line-height:1.45;margin-top:3px;">the composite is the midpoint of you and now — it needs your chart. tap to open ♈ Natal.</div>
+                </div>
+              </sc-if>
+            </sc-if>
+
+            <sc-if value="{{ pEvents }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:8px;">
+                <div style="font-size:9px;letter-spacing:0.2em;text-transform:uppercase;color:#e8ab41;">♒︎ Events &amp; horary</div>
+                <div onClick="{{ closePanel }}" style="font-size:12px;color:#5a5090;cursor:pointer;padding:0 2px;">×</div>
+              </div>
+              <div style="flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:6px;">
+                <div style="display:flex;flex-direction:column;">
+                  <sc-for list="{{ eventItems }}" as="ev" hint-placeholder-count="0">
+                    <div onClick="{{ ev.go }}" style="display:flex;align-items:center;justify-content:space-between;gap:6px;padding:7px 0;border-bottom:1px solid rgba(190,184,226,0.1);cursor:pointer;">
+                      <div style="min-width:0;">
+                        <div style="font-size:11px;color:#dcd7f0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ ev.badge }}{{ ev.name }}</div>
+                        <div style="font-size:8.5px;color:#857cb5;font-variant-numeric:tabular-nums;">{{ ev.whenStr }}</div>
+                      </div>
+                      <div style="display:flex;align-items:center;gap:7px;flex-shrink:0;">
+                        <div onClick="{{ ev.cal }}" title="add to calendar" style="font-size:12px;color:#e8ab41;padding:0 2px;">＋</div>
+                        <div onClick="{{ ev.del }}" style="font-size:11px;color:#5a5090;padding:0 2px;">×</div>
+                      </div>
+                    </div>
+                  </sc-for>
+                  <sc-if value="{{ noEvents }}" hint-placeholder-val="{{ false }}">
+                    <div style="font-size:9.5px;color:#5a5090;line-height:1.5;padding-top:4px;">nothing marked yet — hold the center on the front, or add one here</div>
+                  </sc-if>
+                </div>
+                <input type="text" placeholder="event name" value="{{ evName }}" onChange="{{ onEvName }}" style="width:100%;box-sizing:border-box;background:rgba(0,0,0,0.28);border:1px solid rgba(190,184,226,0.22);border-radius:8px;padding:6px 8px;color:#ece8f8;font-size:11px;outline:none;font-family:inherit;">
+                <div style="display:grid;grid-template-columns:1fr auto;gap:5px;">
+                  <input type="datetime-local" value="{{ evWhen }}" onChange="{{ onEvWhen }}" style="width:100%;box-sizing:border-box;background:rgba(0,0,0,0.28);border:1px solid rgba(190,184,226,0.22);border-radius:8px;padding:6px 6px;color:#ece8f8;font-size:9.5px;outline:none;font-family:inherit;">
+                  <div onClick="{{ addEvent }}" style="font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:#e8ab41;border:1px solid rgba(232,171,65,0.45);border-radius:8px;padding:6px 8px;cursor:pointer;display:flex;align-items:center;">add</div>
+                </div>
+              </div>
+            </sc-if>
+
+            <div style="text-align:center;padding-top:8px;">
+              <div onClick="{{ flipBack }}" style="display:inline-block;font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:#e8ab41;cursor:pointer;padding:4px 10px;">⟲ front</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="height:84px;flex-shrink:0;"></div>
+
+    <sc-if value="{{ dateOpen }}" hint-placeholder-val="{{ false }}">
+      <div onClick="{{ closeDate }}" style="position:absolute;inset:0;z-index:8;background:rgba(8,5,20,0.7);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;">
+        <div onClick="{{ eatTap }}" style="width:76%;background:radial-gradient(closest-side, #171040, #0b0722);border:1px solid rgba(190,184,226,0.3);border-radius:18px;padding:20px;display:flex;flex-direction:column;gap:12px;box-shadow:0 0 50px 6px rgba(232,171,65,0.18);">
+          <div style="font-size:10px;letter-spacing:0.22em;text-transform:uppercase;color:#8f86c0;text-align:center;">Set the instrument</div>
+          <input type="datetime-local" value="{{ dateVal }}" onChange="{{ onDateVal }}" style="width:100%;box-sizing:border-box;background:rgba(0,0,0,0.28);border:1px solid rgba(190,184,226,0.22);border-radius:9px;padding:9px 10px;color:#ece8f8;font-size:12px;outline:none;font-family:inherit;text-align:center;">
+          <div style="display:flex;gap:8px;">
+            <div onClick="{{ goLiveNow }}" style="flex:1;text-align:center;padding:10px 0;border-radius:9px;border:1px solid rgba(190,184,226,0.3);color:#a89ecf;font-size:10px;letter-spacing:0.14em;text-transform:uppercase;cursor:pointer;">now</div>
+            <div onClick="{{ setDate }}" style="flex:1.4;text-align:center;padding:10px 0;border-radius:9px;border:1px solid rgba(232,171,65,0.5);background:rgba(232,171,65,0.14);color:#f0c26a;font-size:10px;letter-spacing:0.14em;text-transform:uppercase;cursor:pointer;">go there</div>
+          </div>
+          <div style="text-align:center;font-size:9px;letter-spacing:0.16em;text-transform:uppercase;color:#5a5090;">tap outside to cancel</div>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ saveOpen }}" hint-placeholder-val="{{ false }}">
+      <div onClick="{{ closeSave }}" style="position:absolute;inset:0;z-index:8;background:rgba(8,5,20,0.7);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;">
+        <div onClick="{{ eatTap }}" style="width:76%;background:radial-gradient(closest-side, #171040, #0b0722);border:1px solid rgba(190,184,226,0.3);border-radius:18px;padding:20px;display:flex;flex-direction:column;gap:12px;box-shadow:0 0 50px 6px rgba(232,171,65,0.18);">
+          <div style="font-size:10px;letter-spacing:0.22em;text-transform:uppercase;color:#8f86c0;text-align:center;">Mark this moment</div>
+          <div style="font-size:11.5px;color:#a89ecf;text-align:center;font-variant-numeric:tabular-nums;">{{ saveWhen }}</div>
+          <input type="text" placeholder="name it" value="{{ saveName }}" onChange="{{ onSaveName }}" style="width:100%;box-sizing:border-box;background:rgba(0,0,0,0.28);border:1px solid rgba(190,184,226,0.22);border-radius:9px;padding:9px 10px;color:#ece8f8;font-size:13px;outline:none;font-family:inherit;text-align:center;">
+          <div style="display:flex;gap:6px;">
+            <sc-for list="{{ kindChips }}" as="kc">
+              <div onClick="{{ kc.tap }}" style="flex:1;text-align:center;padding:8px 0;border-radius:9px;border:1px solid {{ kc.bd }};cursor:pointer;font-size:9.5px;letter-spacing:0.12em;text-transform:uppercase;color:{{ kc.col }};background:rgba(0,0,0,0.2);">{{ kc.name }}</div>
+            </sc-for>
+          </div>
+          <div style="display:flex;gap:8px;">
+            <div onClick="{{ doSave }}" style="flex:1;text-align:center;padding:10px 0;border-radius:9px;border:1px solid rgba(232,171,65,0.5);color:#e8ab41;font-size:10px;letter-spacing:0.14em;text-transform:uppercase;cursor:pointer;">mark</div>
+            <div onClick="{{ doSaveCal }}" style="flex:1.4;text-align:center;padding:10px 0;border-radius:9px;border:1px solid rgba(232,171,65,0.5);background:rgba(232,171,65,0.14);color:#f0c26a;font-size:10px;letter-spacing:0.14em;text-transform:uppercase;cursor:pointer;">mark + calendar</div>
+          </div>
+          <div style="text-align:center;font-size:9px;letter-spacing:0.16em;text-transform:uppercase;color:#5a5090;">tap outside to cancel</div>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ sheetTab }}" hint-placeholder-val="{{ false }}">
+      <div onClick="{{ sheetTap }}" style="position:absolute;left:50%;bottom:18px;transform:translateX(-50%);z-index:5;font-size:9px;letter-spacing:0.2em;text-transform:uppercase;color:#8f86c0;border:1px solid rgba(190,184,226,0.2);border-radius:999px;padding:7px 15px;cursor:pointer;background:rgba(11,8,28,0.55);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);">how to play</div>
+    </sc-if>
+
+    <div onClick="{{ sheetTap }}" style="position:absolute;left:50%;bottom:-470px;width:820px;height:820px;margin-left:-410px;z-index:6;transform:{{ sheetTf }};transition:transform 0.42s cubic-bezier(0.3,1,0.4,1);border-radius:50%;background:radial-gradient(120px 90px at 38% 3.5%, rgba(212,220,240,0.07), transparent 70%),radial-gradient(90px 70px at 62% 2.5%, rgba(212,220,240,0.06), transparent 70%),radial-gradient(46px 36px at 52% 5%, rgba(8,5,18,0.5), transparent 70%),radial-gradient(60px 44px at 29% 6%, rgba(8,5,18,0.35), transparent 70%),radial-gradient(34px 26px at 71% 5.5%, rgba(8,5,18,0.4), transparent 70%),radial-gradient(closest-side, #0b0722 60%, #10122c 84%, rgba(198,208,230,0.15) 96%, rgba(228,234,248,0.28) 100%);border:1px solid rgba(228,234,248,0.34);box-shadow:0 0 80px 14px rgba(205,216,242,0.22), 0 0 22px 3px rgba(214,224,246,0.18), 0 -10px 40px rgba(0,0,0,0.6);cursor:pointer;">
+
+      <sc-if value="{{ sheetOpen }}" hint-placeholder-val="{{ false }}">
+        <sc-for list="{{ sheetLenses }}" as="ln">
+          <div onClick="{{ ln.tap }}" style="position:absolute;top:{{ ln.top }};left:50%;margin-left:{{ ln.ml }};transform:translateX(-50%) rotate({{ ln.rot }});font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:{{ ln.col }};padding:5px 7px;cursor:pointer;white-space:nowrap;border-bottom:1px solid {{ ln.line }};">{{ ln.name }}</div>
+        </sc-for>
+      </sc-if>
+      <div style="width:330px;margin:0 auto;padding-top:70px;">
+        <sc-if value="{{ sheetHints }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;flex-direction:column;gap:10px;text-align:center;">
+            <div style="font-size:10px;letter-spacing:0.24em;text-transform:uppercase;color:#8f86c0;margin-bottom:2px;">how to play</div>
+            <div style="font-size:12px;line-height:1.5;color:#dcd7f0;">grab a body — its orbit becomes your scrub rate</div>
+            <div style="font-size:12px;line-height:1.5;color:#dcd7f0;">hands click onto exact aspects · hold a planet for its reading</div>
+            <div style="font-size:12px;line-height:1.5;color:#dcd7f0;">tap the center to play · hold the center to mark the moment</div>
+            <div style="font-size:12px;line-height:1.5;color:#dcd7f0;">double-tap the rim to flip — the back is you</div>
+            <div style="font-size:12px;line-height:1.5;color:#dcd7f0;">double-tap As to pin the horizon — pinned, play runs in minutes</div>
+            <div style="font-size:12px;line-height:1.5;color:#dcd7f0;">tap the clock to run live · hold it to set a date</div>
+            <div style="margin-top:2px;font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:#5a5090;">tap to dismiss</div>
+          </div>
+        </sc-if>
+        <sc-if value="{{ sheetHasData }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;align-items:center;gap:14px;margin-bottom:6px;">
+            <div style="font-size:32px;line-height:1;color:{{ sheetColor }};text-shadow:0 0 14px {{ sheetColor }};">{{ sheetGlyph }}</div>
+            <div style="display:flex;flex-direction:column;gap:3px;">
+              <div style="font-size:17px;color:#f2f0fc;letter-spacing:0.04em;">{{ sheetName }}{{ sheetRx }}</div>
+              <div style="font-size:12px;color:#857cb5;">{{ sheetPos }}</div>
+            </div>
+          </div>
+          <sc-if value="{{ lensAspects }}" hint-placeholder-val="{{ true }}">
+          <div style="max-height:150px;overflow:auto;">
+            <sc-for list="{{ sheetAspects }}" as="a" hint-placeholder-count="0">
+              <div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;padding:9px 0;border-bottom:1px solid rgba(214,222,240,0.1);">
+                <div style="font-size:14px;color:#dcd7f0;">{{ a.label }}</div>
+                <div style="font-size:10.5px;letter-spacing:0.14em;text-transform:uppercase;color:{{ a.phaseColor }};">{{ a.orbStr }} {{ a.phase }}</div>
+              </div>
+            </sc-for>
+          </div>
+          <sc-if value="{{ sheetEmpty }}" hint-placeholder-val="{{ false }}">
+            <div style="padding:9px 0;font-size:12px;color:#6f66a3;">{{ sheetEmptyText }}</div>
+          </sc-if>
+          </sc-if>
+          <sc-if value="{{ lensRows }}" hint-placeholder-val="{{ false }}">
+          <div style="max-height:170px;overflow:auto;">
+            <sc-for list="{{ sheetRows }}" as="r" hint-placeholder-count="0">
+              <div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;padding:9px 0;border-bottom:1px solid rgba(214,222,240,0.1);">
+                <div style="font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:#857cb5;flex-shrink:0;">{{ r.k }}</div>
+                <div style="font-size:13px;color:#dcd7f0;text-align:right;">{{ r.v }}</div>
+              </div>
+            </sc-for>
+          </div>
+          </sc-if>
+          <div style="margin-top:12px;text-align:center;font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:#5a5090;">tap to dismiss</div>
+        </sc-if>
+      </div>
+    </div>
+
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:430,&quot;height&quot;:800}}">
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.canvasRef = React.createRef();
+    this.skyRef = React.createRef();
+    this.gearRef = React.createRef();
+    this.civilRef = React.createRef();
+    this.moonHeadRef = React.createRef();
+    this.moonCanvasRef = React.createRef();
+    this.moonNameRef = React.createRef();
+    this.moonPctRef = React.createRef();
+    this.moonSignRef = React.createRef();
+    this.moonIngressRef = React.createRef();
+    this.jd = Date.now() / 86400000 + 2440587.5;
+    this.playing = false;
+    this.live = true; // opens as a clock — real time until you grab something
+    this.held = null;
+    this.frame = 'horizon'; // 'sky' = zodiac fixed, ASC sweeps \u00B7 'horizon' = ASC pinned at 9 o'clock, sky rotates
+    this._rot = null; // unset until first tick knows the Asc -- avoids animating in from a wrong 0 on load
+    this.BODIES = ['Sun','Moon','Mercury','Venus','Mars','Jupiter','Saturn','Uranus','Neptune','Pluto'];
+    this.ASTEROIDS = ['Ceres','Pallas','Juno','Vesta'];
+    this.PERIODS = { ASC: 0.99727, Moon: 27.32166, Mercury: 87.9691, Venus: 224.701, Sun: 365.2564, Mars: 686.98, Jupiter: 4332.59, Saturn: 10759.22, Uranus: 30688.5, Neptune: 60182, Pluto: 90560, Node: 6798.38, SNode: 6798.38, Lilith: 3232.6, Chiron: 18513, Ceres: 1681.6, Pallas: 1685.9, Juno: 1594.1, Vesta: 1325.8, Fortune: 0.99727, Vertex: 0.99727, MC: 0.99727, IC: 0.99727, DSC: 0.99727 };
+    this.GLYPH = { Sun: '\u2609', Moon: '\u263D', Mercury: '\u263F', Venus: '\u2640', Mars: '\u2642', Jupiter: '\u2643', Saturn: '\u2644', Uranus: '\u2645', Neptune: '\u2646', Pluto: '\u2647', Node: '\u260A', SNode: '\u260B', Lilith: '\u26B8', Chiron: '\u26B7', Ceres: '\u26B3', Pallas: '\u26B4', Juno: '\u26B5', Vesta: '\u26B6', Fortune: '\u2297', Vertex: 'Vx', MC: 'MC', IC: 'IC', DSC: 'Ds' };
+    this.LABEL = { Node: 'North Node', SNode: 'South Node', Lilith: 'Lilith', Chiron: 'Chiron', Ceres: 'Ceres', Pallas: 'Pallas', Juno: 'Juno', Vesta: 'Vesta', Fortune: 'Part of Fortune', Vertex: 'Vertex', MC: 'Midheaven', IC: 'Imum Coeli', DSC: 'Descendant' };
+    this.NO_RX = ['Sun','Moon','Node','SNode','Lilith','Fortune','Vertex','MC','IC','DSC'];
+    this.SIGNS = ['\u2648','\u2649','\u264A','\u264B','\u264C','\u264D','\u264E','\u264F','\u2650','\u2651','\u2652','\u2653'];
+    this.SIGN_NAMES = ['Aries','Taurus','Gemini','Cancer','Leo','Virgo','Libra','Scorpio','Sagittarius','Capricorn','Aquarius','Pisces'];
+    this.ELEM = ['#d64541', '#d97036', '#e8ab41', '#4da4d9']; // fire / earth / air / water — the one color language
+    this.ELEM_NAME = ['fire', 'earth', 'air', 'water'];
+    this.RULER_BY_SIGN = ['Mars','Venus','Mercury','Moon','Sun','Mercury','Venus','Mars','Jupiter','Saturn','Saturn','Jupiter'];
+    this.EXALT = { Sun: 0, Moon: 1, Mercury: 5, Venus: 11, Mars: 9, Jupiter: 3, Saturn: 6 };
+    this.CHALD = ['♄','♃','♂','☉','♀','☿','☽']; // Chaldean descending order
+    this.ASPECTS = [[0, '#ece8f8'], [60, '#4da4d9'], [90, '#d64541'], [120, '#4da4d9'], [180, '#d64541']];
+    this.ASYM = { 0: '\u260C', 60: '\u26B9', 90: '\u25A1', 120: '\u25B3', 180: '\u260D' };
+    this.JD_MIN = 2341973; this.JD_MAX = 2506331; // 1700-01-01 – 2149-12-31 (widened from 1800–2050; see ephem.js header)
+    this._screen = {}; this._lastReadout = {};
+    // the back: twelve rim slots in zodiacal order from 9 o'clock
+    this.SECTIONS = [
+      { id: 'natal', name: 'Natal chart' }, { id: 'loc', name: 'Here & now' }, { id: 'planets', name: 'Planets' },
+      { id: 'moon', name: 'Moon' }, { id: 'skin', name: 'Appearance' }, { id: 'aspects', name: 'Aspects' },
+      { id: 'people', name: 'People' }, { id: 'objects', name: 'Objects' }, { id: null, name: 'Lenses' },
+      { id: 'transport', name: 'Gears' }, { id: 'events', name: 'Events' }, { id: 'composite', name: 'Composite' },
+    ];
+    this.DEFAULTS = { orb: 6, showWeb: true, playSpeed: 6, rimGear: 2.75, snapMagnet: 0.7, haptics: true, showPlayIcon: false };
+    let saved = {};
+    try { saved = JSON.parse(localStorage.getItem('orbo.astrolabe.back')) || {}; } catch (e) {}
+    // migrate old plain events list into the saved-charts model
+    let charts = saved.saved || (saved.events || []).map((ev) => ({ name: ev.name, kind: 'event', jd: ev.jd, whenStr: ev.whenStr }));
+    const loc = saved.loc || {};
+    this.lat = loc.lat ?? 43.334; this.lng = loc.lng ?? -90.386; // Richland Center fallback
+    this.state = {
+      sheet: null, sheetData: null, flipped: false, helpOpen: false, panel: null,
+      saveOpen: false, saveName: '', saveKind: 'event',
+      natal: Object.assign({ date: '', time: '', place: '', lat: '', lon: '' }, saved.natal),
+      // (O4) showNatal retired — the plate now derives from natal-presence × seat, not a flag.
+      show: Object.assign({ nodes: true, lilith: false, chiron: false, ceres: false, pallas: false, juno: false, vesta: false, fortune: false, vertex: false, mc: false, ic: false, dsc: false }, saved.show),
+      planetOn: Object.assign(Object.fromEntries(this.BODIES.map((b) => [b, true])), saved.planetOn),
+      aspOn: Object.assign({ 0: true, 60: true, 90: true, 120: true, 180: true }, saved.aspOn),
+      settings: Object.assign({}, this.DEFAULTS, saved.settings),
+      saved: charts,
+      evName: '', evWhen: '', locLabel: loc.label || null, locPlace: loc.place || '', locSet: !!saved.loc,
+      skin: this._migrateSkin(Object.assign({ houseNums: true, parallax: true }, saved.skin)),
+      composite: saved.composite ?? false,
+      rete: saved.rete ?? 'sky', seatPicker: null, seatsRevealed: false,
+      pplName: '', pplDate: '', pplTime: '', pplPlace: '',
+      dateOpen: false, dateVal: '', lens: 'aspects',
+      hintsDismissed: saved.hintsDismissed ?? false,
+    };
+  }
+
+  _elemOf(lon) { return this.ELEM[Math.floor(this.norm(lon) / 30) % 4]; }
+  _hexA(hex, a) {
+    const r = parseInt(hex.slice(1, 3), 16), g = parseInt(hex.slice(3, 5), 16), b = parseInt(hex.slice(5, 7), 16);
+    return 'rgba(' + r + ',' + g + ',' + b + ',' + a + ')';
+  }
+  // a bead of poured metal — same recipe as the brass limb, shrunk to a point. hue-tagged for who.
+  _giltBead(ctx, x, y, r, alpha, violet) {
+    const hi = violet ? '245,240,255' : '255,240,205', mid = violet ? '185,174,224' : '217,176,106', lo = violet ? '86,74,130' : '110,77,29';
+    const g = ctx.createRadialGradient(x - r * 0.4, y - r * 0.42, r * 0.1, x, y, r);
+    g.addColorStop(0, 'rgba(' + hi + ',' + alpha + ')');
+    g.addColorStop(0.5, 'rgba(' + mid + ',' + alpha + ')');
+    g.addColorStop(1, 'rgba(' + lo + ',' + alpha + ')');
+    ctx.fillStyle = g;
+    ctx.beginPath(); ctx.arc(x, y, r, 0, 7); ctx.fill();
+    ctx.strokeStyle = 'rgba(' + hi + ',' + (alpha * 0.65) + ')'; ctx.lineWidth = 0.6;
+    ctx.beginPath(); ctx.arc(x, y, r * 0.98, 0, 7); ctx.stroke();
+  }
+  // S1 — the Moon's true phase, painted once and shared everywhere it appears (wheel,
+  // \u264B panel, header mini-disc). ctx is caller-positioned; this paints a terminator-lit
+  // disc at (x,y) radius r. angle (radians) rotates the lit hemisphere to a real screen
+  // bearing toward the Sun \u2014 the wheel passes its true bearing (it can be rotated in
+  // horizon lock); standalone icons omit it and fall back to a fixed wax-right/wane-left
+  // convention (same cos(elongation) math either way \u2014 verified against both prior
+  // implementations: k=(1-cos(el))/2 <=> |1-2k| = cos(el), so the terminator width and
+  // light/dark split agree exactly).
+  _moonFace(ctx, x, y, r, sunLon, moonLon, opts) {
+    opts = opts || {};
+    const lit = opts.lit || '#f6f2e4', dark = opts.dark || '#221a4a';
+    const el = Math.abs(this.wrap(moonLon - sunLon)); // 0..180 \u2014 true elongation magnitude
+    const waxing = this.norm(moonLon - sunLon) < 180;
+    const th = opts.angle != null ? opts.angle : (waxing ? 0 : Math.PI);
+    if (opts.glow) { ctx.shadowColor = opts.glow; ctx.shadowBlur = opts.glowBlur || 10; }
+    ctx.save();
+    ctx.translate(x, y); ctx.rotate(th);
+    ctx.fillStyle = dark;
+    ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI * 2); ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = lit;
+    ctx.beginPath(); ctx.arc(0, 0, r, -Math.PI / 2, Math.PI / 2); ctx.fill();
+    const rx = Math.abs(Math.cos(el * Math.PI / 180)) * r;
+    ctx.fillStyle = el < 90 ? dark : lit;
+    ctx.beginPath(); ctx.ellipse(0, 0, rx, r, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
+    ctx.shadowBlur = 0;
+    if (opts.rim !== false) {
+      ctx.strokeStyle = opts.rimColor || 'rgba(220,214,240,0.3)'; ctx.lineWidth = opts.rimWidth || 1;
+      ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.stroke();
+    }
+  }
+  _canvasAng(lon) { return -(180 + lon + (this._rot || 0)) * Math.PI / 180; }
+
+  _active() {
+    const b = this.BODIES.filter((n) => this.state.planetOn[n] !== false);
+    const s = this.state.show;
+    if (s.nodes) b.push('Node', 'SNode');
+    if (s.lilith) b.push('Lilith');
+    if (s.chiron) b.push('Chiron');
+    if (s.ceres) b.push('Ceres');
+    if (s.pallas) b.push('Pallas');
+    if (s.juno) b.push('Juno');
+    if (s.vesta) b.push('Vesta');
+    if (s.fortune) b.push('Fortune');
+    if (s.vertex) b.push('Vertex');
+    if (s.mc) b.push('MC');
+    if (s.ic) b.push('IC');
+    if (s.dsc) b.push('DSC');
+    return b;
+  }
+  _aspects() { return this.ASPECTS.filter(([ang]) => this.state.aspOn[ang] !== false); }
+  _partners(held) {
+    return this._active().filter((n) => n !== 'SNode' && n !== held && !(held === 'SNode' && n === 'Node'));
+  }
+
+  _persist(patch) {
+    const s = Object.assign({}, this.state, patch || {});
+    try {
+      localStorage.setItem('orbo.astrolabe.back', JSON.stringify({
+        natal: s.natal, show: s.show, planetOn: s.planetOn, skin: s.skin, composite: s.composite, rete: s.rete,
+        aspOn: s.aspOn, settings: s.settings, saved: s.saved, hintsDismissed: s.hintsDismissed,
+        loc: s.locSet ? { lat: this.lat, lng: this.lng, label: s.locLabel, place: s.locPlace } : null,
+      }));
+    } catch (e) {}
+  }
+  _setNatal(k, v) {
+    const natal = Object.assign({}, this.state.natal); natal[k] = v;
+    this._natalKey = null;
+    const patch = { natal };
+    // S3 \u2014 stale-seat guard, natal half: composite-me only exists while a natal is
+    // engraved (_natal's truth table); clearing the date \u2014 natal's sole presence gate,
+    // see _natalJd \u2014 out from under an engaged composite would leave the plate seated
+    // on a chart that no longer exists. Release it the same way the \u2653 panel's own
+    // off-switch does (_toggleComposite).
+    if (k === 'date' && !v && this.state.composite) {
+      patch.composite = false;
+      patch.rete = this.state.rete === 'off' ? 'sky' : this.state.rete;
+      this._lastReadout.civil = null;
+    }
+    this.setState(patch); this._persist(patch);
+  }
+  _setSetting(k, v) {
+    const settings = Object.assign({}, this.state.settings); settings[k] = v;
+    this.setState({ settings }); this._persist({ settings });
+  }
+  _objChip(o) {
+    const on = !!this.state.show[o.key];
+    return {
+      glyph: o.glyph, name: o.name,
+      col: on ? '#ece8f8' : 'rgba(143,134,192,0.35)', txt: on ? '#a89ecf' : 'rgba(143,134,192,0.35)',
+      bd: on ? 'rgba(232,171,65,0.4)' : 'rgba(190,184,226,0.12)',
+      tap: () => this._toggleShow(o.key),
+    };
+  }
+  _setSkin(k) {
+    const skin = Object.assign({}, this.state.skin); skin[k] = !skin[k];
+    this.setState({ skin }); this._persist({ skin });
+  }
+  // O1 (♌ re-home): the limb is two orthogonal facts — decan faces (off/engraved)
+  // and rim metal (none/brass/silver). The packed skin.limb string and the legacy
+  // skin.decans boolean are retired; _migrateSkin folds any old value into
+  // {faces, metal} once, on load. (The sheet is always silver — no chip; see F1.)
+  _migrateSkin(skin) {
+    if (skin.metal == null || skin.faces == null) {
+      const legacy = skin.limb || (skin.decans ? 'engraved' : 'off');
+      skin.metal = legacy.indexOf('brass') === 0 ? 'brass' : legacy.indexOf('silver') === 0 ? 'silver' : 'none';
+      skin.faces = legacy === 'engraved' || legacy.indexOf('faces') > -1;
+    }
+    delete skin.limb; delete skin.decans;
+    return skin;
+  }
+  _setMetal(m) {
+    const skin = Object.assign({}, this.state.skin, { metal: m });
+    this.setState({ skin }); this._persist({ skin });
+  }
+  _setFaces(v) {
+    const skin = Object.assign({}, this.state.skin, { faces: v });
+    this.setState({ skin }); this._persist({ skin });
+  }
+  _toggleComposite() {
+    const composite = !this.state.composite;
+    // composite opens SOLO — the personal astrolabe; the sky rejoins via the seat card
+    const rete = composite ? 'off' : (this.state.rete === 'off' ? 'sky' : this.state.rete);
+    this._lastReadout.civil = null; // O2: the date line migrates between seats — force a repaint
+    this.setState({ composite, rete }); this._persist({ composite, rete });
+  }
+  _toggleShow(k) {
+    const show = Object.assign({}, this.state.show); show[k] = !show[k];
+    this.setState({ show }, () => { if (this.held && this.held !== 'ASC' && !this._active().includes(this.held)) this.held = null; });
+    this._persist({ show });
+  }
+  _togglePlanet(n) {
+    const planetOn = Object.assign({}, this.state.planetOn); planetOn[n] = planetOn[n] === false;
+    if (this.held === n && !planetOn[n]) this.held = null;
+    this.setState({ planetOn }); this._persist({ planetOn });
+  }
+  _toggleAsp(ang) {
+    const aspOn = Object.assign({}, this.state.aspOn); aspOn[ang] = aspOn[ang] === false;
+    this.setState({ aspOn }); this._persist({ aspOn });
+  }
+  _cityMatch(v) {
+    if (!this.cities) return null;
+    const q = v.trim().toLowerCase();
+    return this.cities.find((c) => c.n.toLowerCase() === q) || null;
+  }
+
+  _saveChart(kind, name, alsoCal) {
+    const d = this.eph ? this.eph.jdToDate(this.jd) : new Date((this.jd - 2440587.5) * 86400000);
+    const item = {
+      name: name.trim() || 'Untitled moment', kind, jd: this.jd,
+      whenStr: d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) + ' \u00B7 ' + d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' }),
+    };
+    const saved = [...this.state.saved, item].sort((a, b) => a.jd - b.jd);
+    this.setState({ saved, saveOpen: false, saveName: '' });
+    this._persist({ saved });
+    if (alsoCal) this._ics(item);
+  }
+
+  _ics(item) {
+    const d = this.eph ? this.eph.jdToDate(item.jd) : new Date((item.jd - 2440587.5) * 86400000);
+    const p = (n) => String(n).padStart(2, '0');
+    const fmt = (dt) => dt.getFullYear() + p(dt.getMonth() + 1) + p(dt.getDate()) + 'T' + p(dt.getHours()) + p(dt.getMinutes()) + '00';
+    const end = new Date(d.getTime() + 3600000);
+    const txt = 'BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//Orbo//Astrolabe//EN\r\nBEGIN:VEVENT\r\nUID:' + Date.now() + '@orbo\r\nDTSTAMP:' + fmt(new Date()) + '\r\nDTSTART:' + fmt(d) + '\r\nDTEND:' + fmt(end) + '\r\nSUMMARY:' + item.name.replace(/[,;\\]/g, ' ') + '\r\nDESCRIPTION:Marked with the Orbo Astrolabe (' + item.kind + ')\r\nEND:VEVENT\r\nEND:VCALENDAR\r\n';
+    const url = URL.createObjectURL(new Blob([txt], { type: 'text/calendar' }));
+    const a = document.createElement('a');
+    a.href = url; a.download = item.name.replace(/\W+/g, '_') + '.ics'; a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 4000);
+  }
+
+  // back rim geometry (viewBox 0 0 100): Aries at 9 o'clock, counterclockwise, same as the front
+  _segPt(a, r) { const rad = a * Math.PI / 180; return [50 + r * Math.cos(rad), 50 - r * Math.sin(rad)]; }
+  _segD(k) {
+    const r1 = 38.5, r2 = 49, a1 = 180 + k * 30, a2 = a1 + 30;
+    const [x1o, y1o] = this._segPt(a1, r2), [x2o, y2o] = this._segPt(a2, r2);
+    const [x1i, y1i] = this._segPt(a1, r1), [x2i, y2i] = this._segPt(a2, r1);
+    return 'M ' + x1o.toFixed(2) + ' ' + y1o.toFixed(2) + ' A ' + r2 + ' ' + r2 + ' 0 0 0 ' + x2o.toFixed(2) + ' ' + y2o.toFixed(2) +
+      ' L ' + x2i.toFixed(2) + ' ' + y2i.toFixed(2) + ' A ' + r1 + ' ' + r1 + ' 0 0 1 ' + x1i.toFixed(2) + ' ' + y1i.toFixed(2) + ' Z';
+  }
+
+  _sectionDot(id) {
+    const s = this.state, df = this.DEFAULTS;
+    switch (id) {
+      case 'natal': return !!s.natal.date;
+      case 'loc': return s.locSet;
+      case 'planets': return this.BODIES.some((b) => s.planetOn[b] === false);
+      case 'aspects': return s.settings.orb !== df.orb || !s.settings.showWeb || Object.values(s.aspOn).some((v) => v === false);
+      case 'people': return s.saved.some((c) => c.kind === 'person');
+      case 'objects': return !s.show.nodes || s.show.lilith || s.show.chiron || s.show.ceres || s.show.pallas || s.show.juno || s.show.vesta || s.show.fortune || s.show.vertex || s.show.mc || s.show.ic || s.show.dsc;
+      case 'skin': return !s.skin.houseNums || !!s.skin.faces || (s.skin.metal && s.skin.metal !== 'none');
+      case 'transport': return s.settings.playSpeed !== df.playSpeed || s.settings.rimGear !== df.rimGear || s.settings.snapMagnet !== df.snapMagnet || s.settings.haptics !== df.haptics || s.settings.showPlayIcon !== df.showPlayIcon;
+      case 'events': return s.saved.some((c) => c.kind !== 'person');
+      case 'composite': return s.composite;
+      default: return false;
+    }
+  }
+
+  renderVals() {
+    const sd = this.state.sheetData;
+    const s = this.state;
+    const onOff = (v) => v ? 'rgba(232,171,65,0.85)' : 'rgba(190,184,226,0.18)';
+    const knob = (v) => v ? '13px' : '2px';
+    const segs = this.SECTIONS.map((sec, k) => {
+      const activeP = sec.id && s.panel === sec.id;
+      const [gx, gy] = this._segPt(180 + k * 30 + 15, 43.75);
+      return {
+        d: this._segD(k), glyph: this.SIGNS[k] + '\uFE0E', gl: gx + '%', gt: gy + '%',
+        fill: activeP ? 'rgba(232,171,65,0.14)' : sec.id ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.12)',
+        col: activeP ? '#e8ab41' : sec.id ? '#a89ecf' : 'rgba(143,134,192,0.28)',
+        tap: sec.id ? () => this.setState({ panel: activeP ? null : sec.id }) : () => {},
+      };
+    });
+    const segDots = this.SECTIONS.map((sec, k) => ({ sec, k })).filter(({ sec }) => sec.id && this._sectionDot(sec.id)).map(({ k }) => {
+      const [x, y] = this._segPt(180 + k * 30 + 15, 40.2);
+      return { x, y };
+    });
+    const chartItem = (c, i) => ({
+      name: c.name, whenStr: c.whenStr,
+      badge: c.kind === 'horary' ? '? ' : '',
+      go: () => { this.live = false; this._goLive = false; this.setState({ flipped: false, panel: null }); this._homeJd = Math.min(this.JD_MAX, Math.max(this.JD_MIN, c.jd)); },
+      cal: (e) => { e.stopPropagation(); this._ics(c); },
+      del: (e) => {
+        e.stopPropagation();
+        const saved = s.saved.filter((x) => x !== c);
+        const patch = { saved };
+        // S3 \u2014 stale-seat guard, roster half: _setRete freezes a plain COPY of the
+        // chart ({name,kind,jd,lat,lon}), not a reference, so deleting c from \u264e/\u2652
+        // can't be caught by identity \u2014 match on (jd,name) instead and release the
+        // rete seat back to the sky rather than leave it pointing at a chart that's gone.
+        const r = s.rete;
+        if (r && typeof r === 'object' && r.jd === c.jd && r.name === c.name) {
+          patch.rete = 'sky';
+          this._lastReadout.civil = null;
+        }
+        this.setState(patch); this._persist(patch);
+      },
+    });
+    const people = s.saved.filter((c) => c.kind === 'person').map(chartItem);
+    const eventItems = s.saved.filter((c) => c.kind !== 'person').map(chartItem);
+    const KINDS = [['person', 'Person'], ['event', 'Event'], ['horary', 'Horary']];
+    return {
+      canvasRef: this.canvasRef, skyRef: this.skyRef, gearRef: this.gearRef, civilRef: this.civilRef,
+      moonHeadRef: this.moonHeadRef,
+      moonCanvasRef: this.moonCanvasRef, moonNameRef: this.moonNameRef, moonPctRef: this.moonPctRef,
+      moonSignRef: this.moonSignRef, moonIngressRef: this.moonIngressRef,
+      moonPhaseTap: () => {
+        if (!this.eph) return;
+        const jNew = this._nextMoonEvent(0), jFull = this._nextMoonEvent(180);
+        const cands = [jNew, jFull].filter((x) => x != null);
+        if (!cands.length) return;
+        this.live = false; this._goLive = false;
+        this._homeJd = Math.min(...cands);
+      },
+      goNow: () => { this._homeJd = Date.now() / 86400000 + 2440587.5; this._goLive = true; },
+      clockDown: () => {
+        this._clockLP = setTimeout(() => {
+          this._clockLP = null;
+          const d = this.eph ? this.eph.jdToDate(this.jd) : new Date();
+          const p = (n) => String(n).padStart(2, '0');
+          this.setState({ dateOpen: true, dateVal: d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + 'T' + p(d.getHours()) + ':' + p(d.getMinutes()) });
+        }, 550);
+      },
+      clockUp: () => {
+        if (this._clockLP) { clearTimeout(this._clockLP); this._clockLP = null; this._homeJd = Date.now() / 86400000 + 2440587.5; this._goLive = true; }
+      },
+      clockCancel: () => { if (this._clockLP) { clearTimeout(this._clockLP); this._clockLP = null; } },
+      dateOpen: s.dateOpen, dateVal: s.dateVal,
+      onDateVal: (e) => this.setState({ dateVal: e.target.value }),
+      closeDate: () => this.setState({ dateOpen: false }),
+      setDate: () => {
+        const d = new Date(s.dateVal);
+        if (isNaN(d)) return;
+        this.live = false; this._goLive = false;
+        this._homeJd = Math.min(this.JD_MAX, Math.max(this.JD_MIN, d.getTime() / 86400000 + 2440587.5));
+        this.setState({ dateOpen: false });
+      },
+      goLiveNow: () => { this._homeJd = Date.now() / 86400000 + 2440587.5; this._goLive = true; this.setState({ dateOpen: false }); },
+      sheetTap: () => {
+        if (this.state.sheet) {
+          const wasHints = this.state.sheet === 'hints';
+          this.setState({ sheet: null, hintsDismissed: this.state.hintsDismissed || wasHints });
+          if (wasHints && !this.state.hintsDismissed) this._persist({ hintsDismissed: true });
+        } else {
+          this.setState({ sheet: 'hints', sheetData: null });
+        }
+      },
+      sheetTf: s.sheet ? 'translateY(0)' : s.flipped ? 'translateY(115%)' : 'translateY(334px)',
+      sheetOpen: !!sd && !!s.sheet, sheetHints: s.sheet === 'hints' || (!s.sheet && !sd && !s.hintsDismissed),
+      sheetTab: false,
+      sheetLenses: [
+        { id: 'signif', name: 'signification', ml: '-168px', top: '59px', rot: '-24deg' },
+        { id: 'aspects', name: 'aspects', ml: '-56px', top: '27px', rot: '-7.8deg' },
+        { id: 'motion', name: 'motion', ml: '56px', top: '27px', rot: '7.8deg' },
+        { id: 'toyou', name: 'to you', ml: '168px', top: '59px', rot: '24deg' },
+      ].map((l) => ({
+        name: l.name, ml: l.ml, top: l.top, rot: l.rot,
+        col: s.lens === l.id ? '#e8ab41' : '#6f66a3',
+        line: s.lens === l.id ? 'rgba(232,171,65,0.5)' : 'transparent',
+        tap: (e) => { e.stopPropagation(); this.setState({ lens: l.id }); },
+      })),
+      lensAspects: s.lens === 'aspects' || s.lens === 'toyou',
+      lensRows: s.lens === 'signif' || s.lens === 'motion',
+      sheetRows: sd ? ((s.lens === 'motion' ? sd.motion : sd.signif) || []) : [],
+      sheetHasData: !!sd,
+      sheetName: sd ? sd.label : '', sheetRx: sd && sd.rx ? ' \u211E' : '',
+      sheetGlyph: sd ? sd.glyph : '', sheetColor: sd ? sd.color : '#dcd7f0',
+      sheetPos: sd ? sd.pos : '',
+      sheetAspects: sd ? (s.lens === 'toyou' ? (sd.toYou || []) : sd.aspects) : [],
+      sheetEmpty: sd ? (s.lens === 'toyou' ? !(sd.toYou || []).length : !sd.aspects.length) : false,
+      sheetEmptyText: s.lens === 'toyou' ? (this._natalTargets().length ? 'quiet \u2014 nothing to you in orb' : 'engrave your natal on the back to light this up') : 'no aspects in orb',
+      helpOpen: s.helpOpen,
+      openHelp: () => this.setState({ helpOpen: true }),
+      closeHelp: () => this.setState({ helpOpen: false }),
+      flipTf: s.flipped ? 'rotateY(180deg)' : 'rotateY(0deg)',
+      frontPe: s.flipped ? 'none' : 'auto',
+      backPe: s.flipped ? 'auto' : 'none',
+      flipBack: () => this.setState({ flipped: false }),
+      // back rim + panels
+      segs, segDots,
+      legend: this.SECTIONS.map((sec, k) => ({
+        glyph: this.SIGNS[k], name: sec.name || '\u2014',
+        op: sec.id ? 1 : 0.32,
+        tap: sec.id ? () => this.setState({ panel: sec.id }) : () => {},
+      })),
+      closePanel: () => this.setState({ panel: null }),
+      pLegend: !s.panel, pNatal: s.panel === 'natal', pLoc: s.panel === 'loc', pPlanets: s.panel === 'planets',
+      pObjects: s.panel === 'objects', pAspects: s.panel === 'aspects', pTransport: s.panel === 'transport',
+      pPeople: s.panel === 'people', pEvents: s.panel === 'events', pSkin: s.panel === 'skin', pMoon: s.panel === 'moon',
+      pComposite: s.panel === 'composite',
+      hasNatal: this._natalTargets().length > 0, noNatal: this._natalTargets().length === 0,
+      goNatal: () => this.setState({ panel: 'natal' }),
+      cityOpts: this.cities ? this.cities.map((c) => c.n) : [],
+      // natal
+      natalDate: s.natal.date, natalTime: s.natal.time, natalPlace: s.natal.place,
+      onNatalDate: (e) => this._setNatal('date', e.target.value),
+      onNatalTime: (e) => this._setNatal('time', e.target.value),
+      onNatalPlace: (e) => {
+        const v = e.target.value;
+        const hit = this._cityMatch(v);
+        const natal = Object.assign({}, this.state.natal, { place: v, lat: hit ? String(hit.la) : this.state.natal.lat, lon: hit ? String(hit.lo) : this.state.natal.lon });
+        if (hit) this._natalKey = null;
+        this.setState({ natal }); this._persist({ natal });
+      },
+      natalCityCol: this._cityMatch(s.natal.place) || (s.natal.lat && s.natal.place) ? '#6fa06f' : '#5a5090',
+      natalCityNote: this._cityMatch(s.natal.place) || (s.natal.lat && s.natal.place) ? 'place found \u2014 rising sign unlocked' : 'pick from the list to place your horizon',
+      // (O4) the ♈ natal-ring toggle is retired — the seat picker owns the plate.
+      // here & now
+      locStr: Math.abs(this.lat).toFixed(2) + '\u00B0 ' + (this.lat >= 0 ? 'N' : 'S') + ' \u00B7 ' + Math.abs(this.lng).toFixed(2) + '\u00B0 ' + (this.lng >= 0 ? 'E' : 'W'),
+      locNote: s.locLabel || 'fallback: Richland Center, WI \u2014 locate to make the horizon yours',
+      locPlace: s.locPlace,
+      onLocPlace: (e) => {
+        const v = e.target.value;
+        const hit = this._cityMatch(v);
+        if (hit) { this.lat = hit.la; this.lng = hit.lo; this._pjd = null; }
+        this.setState({ locPlace: v, locSet: this.state.locSet || !!hit, locLabel: hit ? 'set to ' + hit.n : this.state.locLabel }, () => this._persist());
+      },
+      useMyLocation: () => {
+        if (!navigator.geolocation) { this.setState({ locLabel: 'geolocation unavailable in this browser' }); return; }
+        navigator.geolocation.getCurrentPosition(
+          (p) => { this.lat = p.coords.latitude; this.lng = p.coords.longitude; this._pjd = null; this.setState({ locLabel: 'located \u2014 the horizon is yours', locSet: true }, () => this._persist()); },
+          () => this.setState({ locLabel: 'location denied \u2014 still on the fallback' })
+        );
+      },
+      // planets
+      planetChips: this.BODIES.map((b) => {
+        const on = s.planetOn[b] !== false;
+        return {
+          glyph: this.GLYPH[b], name: b,
+          col: on ? '#ece8f8' : 'rgba(143,134,192,0.35)', txt: on ? '#a89ecf' : 'rgba(143,134,192,0.35)',
+          bd: on ? 'rgba(232,171,65,0.4)' : 'rgba(190,184,226,0.12)',
+          tap: () => this._togglePlanet(b),
+        };
+      }),
+      // objects — physical bodies vs calculated points, delineated
+      objectChips: [
+        { key: 'chiron', glyph: '\u26B7', name: 'Chiron' },
+        { key: 'ceres', glyph: '\u26B3', name: 'Ceres' },
+        { key: 'pallas', glyph: '\u26B4', name: 'Pallas' },
+        { key: 'juno', glyph: '\u26B5', name: 'Juno' },
+        { key: 'vesta', glyph: '\u26B6', name: 'Vesta' },
+      ].map((o) => this._objChip(o)),
+      pointChips: [
+        { key: 'nodes', glyph: '\u260A \u260B', name: 'N & S Node' },
+        { key: 'lilith', glyph: '\u26B8', name: 'Lilith' },
+        { key: 'fortune', glyph: '\u2297', name: 'Fortune' },
+        { key: 'vertex', glyph: 'Vx', name: 'Vertex' },
+        { key: 'mc', glyph: 'MC', name: 'Midheaven' },
+        { key: 'ic', glyph: 'IC', name: 'Imum Coeli' },
+        { key: 'dsc', glyph: 'Ds', name: 'Descendant' },
+      ].map((o) => this._objChip(o)),
+      // aspects
+      aspectChips: this.ASPECTS.map(([ang, color]) => {
+        const on = s.aspOn[ang] !== false;
+        return {
+          glyph: this.ASYM[ang],
+          col: on ? color : 'rgba(143,134,192,0.3)',
+          bd: on ? this._hexA(color === '#ece8f8' ? '#a89ecf' : color, 0.45) : 'rgba(190,184,226,0.12)',
+          tap: () => this._toggleAsp(ang),
+        };
+      }),
+      orbVal: s.settings.orb,
+      onOrb: (e) => this._setSetting('orb', parseFloat(e.target.value)),
+      toggleWeb: () => this._setSetting('showWeb', !s.settings.showWeb),
+      webBg: onOff(s.settings.showWeb), webKnob: knob(s.settings.showWeb),
+      // appearance
+      toggleHouseNums: () => this._setSkin('houseNums'),
+      houseBg: onOff(s.skin.houseNums), houseKnob: knob(s.skin.houseNums),
+      toggleParallax: () => this._setSkin('parallax'),
+      parBg: onOff(s.skin.parallax), parKnob: knob(s.skin.parallax),
+      // O1 — two honest controls: decan faces (off/engraved) × rim metal (none/brass/silver)
+      faceChips: [['off', false], ['engraved', true]].map(([name, v]) => {
+        const cur = !!s.skin.faces === v;
+        return {
+          name,
+          tap: () => this._setFaces(v),
+          bd: cur ? 'rgba(232,171,65,0.55)' : 'rgba(143,134,192,0.22)',
+          bg: cur ? 'rgba(232,171,65,0.12)' : 'rgba(0,0,0,0.2)',
+          col: cur ? '#e8ab41' : '#8f86c0',
+        };
+      }),
+      facesNote: s.skin.faces
+        ? 'the 36 decan faces in Chaldean order, cut quietly into the outer ring'
+        : 'the 36 faces stay hidden',
+      metalChips: [['none', 'none'], ['brass', 'brass'], ['silver', 'silver']].map(([name, m]) => {
+        const cur = (s.skin.metal || 'none') === m;
+        return {
+          name,
+          tap: () => this._setMetal(m),
+          bd: cur ? 'rgba(232,171,65,0.55)' : 'rgba(143,134,192,0.22)',
+          bg: cur ? 'rgba(232,171,65,0.12)' : 'rgba(0,0,0,0.2)',
+          col: cur ? '#e8ab41' : '#8f86c0',
+        };
+      }),
+      metalNote: {
+        none: 'the limb stays dark stone — engraving only, no metal band',
+        brass: 'the rim beveled in brass — the Sun\u2019s metal, a plain polished band',
+        silver: 'the rim beveled in silver — the Moon\u2019s metal, cool and plain',
+      }[s.skin.metal || 'none'],
+      // transport
+      speedVal: s.settings.playSpeed,
+      speedUnit: this.frame === 'horizon' ? 'min/s' : 'h/s',
+      onSpeed: (e) => this._setSetting('playSpeed', parseFloat(e.target.value)),
+      gearVal: s.settings.rimGear,
+      onGear: (e) => this._setSetting('rimGear', parseFloat(e.target.value)),
+      magVal: s.settings.snapMagnet,
+      onMag: (e) => this._setSetting('snapMagnet', parseFloat(e.target.value)),
+      toggleHaptics: () => this._setSetting('haptics', !s.settings.haptics),
+      hapBg: onOff(s.settings.haptics), hapKnob: knob(s.settings.haptics),
+      toggleIcon: () => this._setSetting('showPlayIcon', !s.settings.showPlayIcon),
+      iconBg: onOff(s.settings.showPlayIcon), iconKnob: knob(s.settings.showPlayIcon),
+      // –– the two seats (O2: hidden in default seating; shown on comparison, and the
+      //    date/civil line migrates INTO the card that names the moment being read) ––
+      showSeats: (() => { const reteSky = (s.rete === 'sky' || !s.rete); return !!s.composite || !reteSky || !!s.seatsRevealed; })(),
+      seatToggleShown: (() => { const reteSky = (s.rete === 'sky' || !s.rete); return !s.composite && reteSky; })(),
+      toggleSeats: () => { this._lastReadout.civil = null; this.setState({ seatsRevealed: !s.seatsRevealed, seatPicker: null }); },
+      // exactly one of these three is true at any time — the single home of the address
+      dateUnder: (() => { const reteSky = (s.rete === 'sky' || !s.rete); const seated = !!s.composite || !reteSky; return !seated || (s.rete === 'off' && !s.composite); })(),
+      dateInRete: (() => { const reteSky = (s.rete === 'sky' || !s.rete); const seated = !!s.composite || !reteSky; return seated && s.rete !== 'off'; })(),
+      dateInPlate: (() => { const reteSky = (s.rete === 'sky' || !s.rete); const seated = !!s.composite || !reteSky; return seated && s.rete === 'off' && !!s.composite; })(),
+      seatPlateTitle: s.composite ? 'Composite me' : (this._natalTargets().length ? 'Natal me' : 'No plate'),
+      seatPlateSub: s.composite ? 'you × now · lived' : (this._natalTargets().length ? ((s.natal.date || '') + (s.natal.place ? ' · ' + s.natal.place : '') || 'engraved stone') : 'engrave on the back'),
+      seatPlateCol: s.composite ? '#e8ab41' : '#beb8e2',
+      seatPlateBd: s.composite ? 'rgba(232,171,65,0.4)' : 'rgba(190,184,226,0.24)',
+      seatReteTitle: (s.rete === 'sky' || !s.rete) ? 'The sky' : s.rete === 'off' ? 'No one' : (s.rete.name || 'Chart'),
+      seatReteSub: (s.rete === 'sky' || !s.rete) ? 'current transits · live' : s.rete === 'off' ? 'your astrolabe, alone' : ((s.rete.kind === 'person' ? 'person' : 'event') + ' · frozen'),
+      seatReteCol: (s.rete === 'sky' || !s.rete) ? '#dcd7f0' : s.rete === 'off' ? '#8f86c0' : '#b9aee0',
+      seatReteBd: (s.rete === 'sky' || !s.rete) ? 'rgba(220,215,240,0.24)' : s.rete === 'off' ? 'rgba(143,134,192,0.2)' : 'rgba(185,174,224,0.42)',
+      tapPlateSeat: () => this.setState({ seatPicker: s.seatPicker === 'plate' ? null : 'plate' }),
+      tapReteSeat: () => this.setState({ seatPicker: s.seatPicker === 'rete' ? null : 'rete' }),
+      pkPlate: s.seatPicker === 'plate',
+      pkRete: s.seatPicker === 'rete',
+      closeSeats: () => this.setState({ seatPicker: null }),
+      plateOpts: [
+        { name: 'Natal me', sub: 'engraved stone', on: !s.composite, tap: () => { if (s.composite) this._toggleComposite(); this.setState({ seatPicker: null }); } },
+        { name: 'Composite me', sub: 'you × now · gilt', on: !!s.composite, tap: () => { if (!s.composite) this._toggleComposite(); this.setState({ seatPicker: null }); } },
+      ].map((o) => ({ ...o, col: o.on ? '#e8ab41' : '#dcd7f0', bd: o.on ? 'rgba(232,171,65,0.5)' : 'rgba(190,184,226,0.16)' })),
+      reteOpts: [
+        { name: 'The sky', sub: 'current transits · live', on: s.rete === 'sky' || !s.rete, tap: () => this._setRete('sky') },
+        { name: 'No one', sub: 'your astrolabe, alone', on: s.rete === 'off', tap: () => this._setRete('off') },
+        ...(s.saved || []).map((c) => ({
+          name: c.name || '(unnamed)',
+          sub: (c.kind === 'person' ? 'person' : 'event') + (c.whenStr ? ' · ' + c.whenStr : '') + ' · frozen',
+          on: !!(s.rete && s.rete.jd === c.jd && s.rete.name === c.name),
+          tap: () => this._setRete({ name: c.name, kind: c.kind, jd: c.jd, lat: c.lat, lon: c.lon }),
+        })),
+      ].map((o) => ({ ...o, col: o.on ? '#e8ab41' : '#dcd7f0', bd: o.on ? 'rgba(232,171,65,0.5)' : 'rgba(190,184,226,0.16)' })),
+      // people & events
+      people, noPeople: people.length === 0,
+      toggleComposite: () => this._toggleComposite(),
+      compBg: onOff(s.composite), compKnob: knob(s.composite),
+      compBd: s.composite ? 'rgba(232,171,65,0.5)' : 'rgba(143,134,192,0.2)',
+      compFill: s.composite ? 'rgba(232,171,65,0.1)' : 'rgba(0,0,0,0.18)',
+      compNote: this._natalTargets().length
+        ? 'gilt beads on the plate — the midpoints of you and now'
+        : 'engrave your natal on the back first',
+      pplName: s.pplName, pplDate: s.pplDate, pplTime: s.pplTime, pplPlace: s.pplPlace,
+      onPplName: (e) => this.setState({ pplName: e.target.value }),
+      onPplDate: (e) => this.setState({ pplDate: e.target.value }),
+      onPplTime: (e) => this.setState({ pplTime: e.target.value }),
+      onPplPlace: (e) => this.setState({ pplPlace: e.target.value }),
+      pplCityCol: this._cityMatch(s.pplPlace) ? '#6fa06f' : '#5a5090',
+      pplCityNote: this._cityMatch(s.pplPlace) ? 'place found — their horizon can rise' : 'optional — pick a city for their horizon',
+      addPerson: () => {
+        const d = new Date(s.pplDate + 'T' + (s.pplTime || '12:00'));
+        if (!s.pplName.trim() || isNaN(d)) return;
+        const hit = this._cityMatch(s.pplPlace);
+        const jd = d.getTime() / 86400000 + 2440587.5;
+        const whenStr = d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) + ' · ' + d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+        const item = { name: s.pplName.trim(), kind: 'person', jd, whenStr, place: s.pplPlace, lat: hit ? hit.la : null, lon: hit ? hit.lo : null };
+        const saved2 = [...s.saved, item].sort((a, b) => a.jd - b.jd);
+        this.setState({ saved: saved2, pplName: '', pplDate: '', pplTime: '', pplPlace: '' }); this._persist({ saved: saved2 });
+      },
+      eventItems, noEvents: eventItems.length === 0,
+      evName: s.evName, evWhen: s.evWhen,
+      onEvName: (e) => this.setState({ evName: e.target.value }),
+      onEvWhen: (e) => this.setState({ evWhen: e.target.value }),
+      addEvent: () => {
+        const d = new Date(s.evWhen);
+        if (!s.evName.trim() || isNaN(d)) return;
+        const jd = d.getTime() / 86400000 + 2440587.5;
+        const whenStr = d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) + ' \u00B7 ' + d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+        const saved = [...s.saved, { name: s.evName.trim(), kind: 'event', jd, whenStr }].sort((a, b) => a.jd - b.jd);
+        this.setState({ saved, evName: '', evWhen: '' }); this._persist({ saved });
+      },
+      // save dialog (front, long-press center)
+      saveOpen: s.saveOpen,
+      closeSave: () => this.setState({ saveOpen: false }),
+      eatTap: (e) => e.stopPropagation(),
+      saveWhen: this.eph ? (() => { const d = this.eph.jdToDate(this.jd); return d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' }) + ' \u00B7 ' + d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' }); })() : '',
+      saveName: s.saveName,
+      onSaveName: (e) => this.setState({ saveName: e.target.value }),
+      kindChips: KINDS.map(([k, label]) => ({
+        name: label,
+        col: s.saveKind === k ? '#e8ab41' : '#857cb5',
+        bd: s.saveKind === k ? 'rgba(232,171,65,0.55)' : 'rgba(190,184,226,0.15)',
+        tap: () => this.setState({ saveKind: k }),
+      })),
+      doSave: () => this._saveChart(s.saveKind, s.saveName, false),
+      doSaveCal: () => this._saveChart(s.saveKind, s.saveName, true),
+    };
+  }
+
+  _waitGlobal(key, tries) {
+    return new Promise((resolve, reject) => {
+      const attempt = (n) => {
+        if (window[key]) return resolve(window[key]);
+        if (n <= 0) return reject(new Error(key + ' unavailable'));
+        setTimeout(() => attempt(n - 1), 25);
+      };
+      attempt(tries);
+    });
+  }
+
+  async componentDidMount() {
+    // Canvas + gesture wiring and the RAF loop start immediately, never gated on
+    // the engine load \u2014 so a slow or failed module fetch can't freeze the clock.
+    const c = this.canvasRef.current;
+    if (c) {
+      this._ro = new ResizeObserver(() => this._size());
+      this._ro.observe(c.parentElement);
+      this._size();
+      c.addEventListener('pointerdown', this._down);
+      c.addEventListener('pointermove', this._move);
+      c.addEventListener('pointerup', this._up);
+      c.addEventListener('pointercancel', this._up);
+    }
+    const loop = (t) => { this._tick(t); this._raf = requestAnimationFrame(loop); };
+    this._raf = requestAnimationFrame(loop);
+    try { this.eph = await this._waitGlobal('__ORBO_EPH', 240); } catch (e) { console.error('Orbo: ephemeris engine failed to load', e); }
+    try { this.framing = await this._waitGlobal('__ORBO_FRAMING', 240); } catch (e) {}
+    try { this.cities = await this._waitGlobal('__ORBO_CITIES', 240); this.forceUpdate(); } catch (e) {}
+  }
+
+  componentWillUnmount() {
+    cancelAnimationFrame(this._raf);
+    if (this._ro) this._ro.disconnect();
+  }
+
+  norm(x) { x %= 360; return x < 0 ? x + 360 : x; }
+  // eph.positions(jd) alone omits Fortune/Vertex (they need asc, computed
+  // separately) — any code that snaps/scans a hypothetical jd by indexing a
+  // fresh positions() call by dynamic body name must go through this instead,
+  // or Fortune/Vertex reads back undefined -> NaN -> kills the render loop.
+  _posAt(jd) {
+    const p = this.eph.positions(jd);
+    if (this.eph.vertex) p.Vertex = this.eph.vertex(jd, this.lat, this.lng);
+    const ang = this.eph.angles(jd, this.lat, this.lng);
+    p.MC = ang.mc;
+    p.IC = this.norm(ang.mc + 180);
+    p.DSC = this.norm(ang.asc + 180);
+    if (this.eph.partOfFortune) {
+      const a = ang.asc;
+      const isDay = this.norm(p.Sun - a) >= 180;
+      p.Fortune = this.eph.partOfFortune(p.Sun, p.Moon, a, isDay);
+    }
+    return p;
+  }
+  wrap(x) { x = this.norm(x); return x > 180 ? x - 360 : x; }
+
+  _size() {
+    const c = this.canvasRef.current;
+    if (!c || !c.parentElement) return;
+    const w = c.parentElement.clientWidth;
+    if (!w) return;
+    const dpr = window.devicePixelRatio || 1;
+    c.width = Math.round(w * dpr); c.height = Math.round(w * dpr);
+    c.style.height = w + 'px';
+    this.dpr = dpr; this.w = w; this.cx = w / 2; this.cy = w / 2; this.R = w / 2 - 20;
+  }
+
+  _xy(lon, r, fixed) {
+    const a = (180 + lon + (fixed ? 0 : this._rot || 0)) * Math.PI / 180;
+    return [this.cx + r * Math.cos(a), this.cy - r * Math.sin(a)];
+  }
+  _fingerLon(x, y) {
+    return this.norm(Math.atan2(this.cy - y, x - this.cx) * 180 / Math.PI - 180 - (this._rot || 0));
+  }
+  // ♓ a held composite bead is tracked as this.held = 'bead:<key>' (<key> = body name,
+  // or 'cASC'). This returns the key when a bead is grabbed, else null. Fable reads it in
+  // _draw to light the held bead's channel; the grab/rate plumbing already consumes it.
+  _heldBeadKey() { return (this.held && this.held.startsWith && this.held.startsWith('bead:')) ? this.held.slice(5) : null; }
+
+  // –– the two-seat law: rete (above) = the actor · plate (below) = the subject ––
+  _reteFrozen() { const r = this.state.rete; return !!(r && typeof r === 'object' && r.jd); }
+  _setRete(rete) {
+    if (rete && typeof rete === 'object' && rete.jd) {
+      // a person/event takes the seat — the reading freezes, the wheel eases to their moment
+      this.playing = false; this.live = false; this._goLive = false;
+      this._homeJd = Math.min(this.JD_MAX, Math.max(this.JD_MIN, rete.jd));
+    }
+    this._lastReadout.civil = null; // O2: date line migrates into/out of the rete card
+    this.setState({ rete, seatPicker: null }); this._persist({ rete });
+  }
+  _reteChart(r) {
+    if (!this.eph || !r || !r.jd) return null;
+    if (this._reteCache && this._reteCache.jd === r.jd) return this._reteCache;
+    const pos = this.eph.positions(r.jd);
+    let asc = null;
+    try { if (r.lat != null && r.lon != null) asc = this.eph.angles(r.jd, r.lat, r.lon).asc; } catch (e) {}
+    this._reteCache = { jd: r.jd, pos, asc };
+    return this._reteCache;
+  }
+
+  _down = (e) => {
+    if (!this.eph) return;
+    const x = e.offsetX, y = e.offsetY;
+    const r = Math.hypot(x - this.cx, y - this.cy);
+    try { e.target.setPointerCapture(e.pointerId); } catch (err) {}
+    this._downAt = [x, y];
+    let best = null, bestD = 30;
+    for (const [name, pt] of Object.entries(this._screen)) {
+      const d = Math.hypot(x - pt[0], y - pt[1]);
+      if (d < bestD) { bestD = d; best = name; }
+    }
+    // ♓ beads win the inner band while composite is engaged — a bead sitting under a
+    // transit glyph is still grabbable when the touch lands closer to the bead.
+    if (best && this._beadScreen && this.state.composite) {
+      for (const pt of Object.values(this._beadScreen)) {
+        const d = Math.hypot(x - pt[0], y - pt[1]);
+        if (d < 14 && d < bestD) { best = null; break; }
+      }
+    }
+    if (best && this._reteFrozen()) best = null; // frozen reading — nothing scrubs
+    if (best) {
+      this._homeJd = null;
+      this._goLive = false;
+      if (best !== 'ASC') {
+        const now2 = performance.now();
+        if (this._tapB === best && now2 - (this._tapT || 0) < 350) {
+          this._tapT = 0;
+          this._openSheet(best);
+          this._centerCand = false;
+          return;
+        }
+        this._tapT = now2; this._tapB = best;
+      }
+      if (best === 'ASC') {
+        const now = performance.now();
+        if (now - (this._ascTapT || 0) < 350) {
+          this._ascTapT = 0;
+          this.frame = this.frame === 'horizon' ? 'sky' : 'horizon';
+          this._centerCand = false;
+          return;
+        }
+        this._ascTapT = now;
+      }
+      this.held = best;
+      this._lastLon = this._fingerLon(x, y);
+      this._grabR = Math.max(60, r);
+      this._gearMult = 1;
+      this._rawJd = this.jd;
+      this._pressT = performance.now();
+      this._movedPx = 0;
+      this._lastXY = [x, y];
+      this._centerCand = false;
+      return;
+    }
+    // ♓ grab a composite bead → engage its half-gear (♓ step 3). Beads ride the plate
+    // radius; the underlying scrub body is the bead's planet (cASC → ASC). This wires the
+    // GRAB + rate only — the FEEL of the held bead (channel ignition, flip pulse, focus
+    // dimming, haptics) is Fable's, hooked via _heldBeadKey() in _draw and the flip in
+    // this.compFlip. Bead grab sits below transit-body priority, above the natal tap.
+    if (this._beadScreen && this.state.composite && !this._reteFrozen()) {
+      let bb = null, bbD = 18;
+      for (const [nm, pt] of Object.entries(this._beadScreen)) {
+        const d = Math.hypot(x - pt[0], y - pt[1]);
+        if (d < bbD) { bbD = d; bb = nm; }
+      }
+      if (bb) {
+        this._homeJd = null; this._goLive = false; this._centerCand = false;
+        this.held = 'bead:' + bb;
+        this._lastLon = this._fingerLon(x, y);
+        this._grabR = Math.max(60, r);
+        this._gearMult = 1;
+        this._rawJd = this.jd;
+        this._pressT = performance.now();
+        this._movedPx = 0;
+        this._lastXY = [x, y];
+        return;
+      }
+    }
+    const now3 = performance.now();
+    // tap a natal engraving → its reading (the plate speaks). Transit bodies above
+    // keep priority (they return first); this only fires on a clear plate hit.
+    if (this._natalScreen) {
+      let nb = null, nbD = 20;
+      for (const [nm, pt] of Object.entries(this._natalScreen)) {
+        const d = Math.hypot(x - pt[0], y - pt[1]);
+        if (d < nbD) { nbD = d; nb = nm; }
+      }
+      if (nb) {
+        this._homeJd = null; this._goLive = false; this._centerCand = false;
+        this._openNatalSheet(nb);
+        return;
+      }
+    }
+    // double-tap the rim (tick + sign band) = flip the disc
+    if (r > this.R - 36) {
+      if (now3 - (this._edgeT || 0) < 350) {
+        this._edgeT = 0;
+        this.setState({ flipped: true });
+        this._centerCand = false;
+        return;
+      }
+      this._edgeT = now3;
+    }
+    // center: tap = play/pause, hold = mark the moment
+    this._centerCand = r < 60;
+    this._centerDown = this._centerCand;
+    this._centerT = now3;
+  }
+
+  _move = (e) => {
+    if (!this.held) {
+      if (this._centerCand && this._downAt && Math.hypot(e.offsetX - this._downAt[0], e.offsetY - this._downAt[1]) > 10) { this._centerCand = false; this._centerDown = false; }
+      return;
+    }
+    if (this._lastXY) {
+      this._movedPx = (this._movedPx || 0) + Math.hypot(e.offsetX - this._lastXY[0], e.offsetY - this._lastXY[1]);
+      this._lastXY = [e.offsetX, e.offsetY];
+    }
+    const lon = this._fingerLon(e.offsetX, e.offsetY);
+    const dLon = this.wrap(lon - this._lastLon);
+    if (dLon) { this.live = false; this._goLive = false; }
+    this._lastLon = lon;
+    const r = Math.max(60, Math.hypot(e.offsetX - this.cx, e.offsetY - this.cy));
+    const k = this.state.settings.rimGear;
+    this._gearMult = Math.pow(this._grabR / r, k);
+    const beadKey = this._heldBeadKey();
+    // ♓ half-gear: a composite bead is midpoint(natal, transit), so it moves at HALF the
+    // transit's rate (natal is fixed — only the transit end travels). Scrubbing the bead the
+    // same visual arc therefore needs 2× the transit period. This is the rate law, not feel.
+    const period = beadKey ? 2 * this.PERIODS[beadKey === 'cASC' ? 'ASC' : beadKey] : this.PERIODS[this.held];
+    this._rawJd = Math.min(this.JD_MAX, Math.max(this.JD_MIN, (this._rawJd ?? this.jd) + dLon / 360 * period * this._gearMult));
+    this.jd = beadKey ? this._rawJd : this._applyMagnet(this._rawJd); // bead snap-magnetism is ♓ step 5 (Fable/Opus)
+  }
+
+  _up = () => {
+    if (this._centerCand && this._centerDown) { this.playing = !this.playing; if (this.playing) { this.live = false; this._goLive = false; } }
+    this._centerCand = false;
+    this._centerDown = false;
+    this.held = null;
+    this._gearMult = 1;
+    this._pressT = null;
+  }
+
+  _tick(t) {
+    if (!this.eph || !this.w) { this._lastT = t; return; }
+    const dt = this._lastT ? (t - this._lastT) / 1000 : 0;
+    this._lastT = t;
+    if (this._homeJd != null && !this.held) {
+      const dh = this._homeJd - this.jd;
+      if (Math.abs(dh) < 1e-4) {
+        this.jd = this._homeJd; this._homeJd = null;
+        if (this._goLive) { this.live = true; this._goLive = false; this.playing = false; }
+      } else this.jd += dh * Math.min(1, dt * 4);
+    }
+    if (this._reteFrozen()) { this.live = false; this.playing = false; }
+    if (this.live && !this.held && !this.playing && this._homeJd == null) {
+      this.jd = Math.min(this.JD_MAX, Date.now() / 86400000 + 2440587.5);
+    }
+    if (this.playing && !this.held) {
+      const v = this.state.settings.playSpeed;
+      // horizon lock = nuanced timing: the dial reads MINUTES per second; free frame = hours
+      const hps = this.frame === 'horizon' ? v / 60 : v;
+      this.jd = Math.min(this.JD_MAX, this.jd + dt * hps / 24);
+    }
+    // hold the center = mark the moment
+    if (this._centerDown && this._centerCand && performance.now() - this._centerT > 600) {
+      this._centerDown = false; this._centerCand = false;
+      this.setState({ saveOpen: true, saveName: '', saveKind: 'event' });
+    }
+    // long-press a planet (held, still) summons its reading
+    if (this.held && this.held !== 'ASC' && !this._heldBeadKey() && this._pressT && performance.now() - this._pressT > 600 && (this._movedPx || 0) < 8) {
+      const b = this.held;
+      this.held = null; this._pressT = null;
+      this._openSheet(b);
+    }
+    // (♓ step 5 / Fable: long-press a HELD bead → its composite reading goes here.)
+    if (this.state.sheet && this.state.sheetData && this.state.sheetData.jd !== this.jd && performance.now() - (this._sheetUp || 0) > 150) {
+      this._sheetUp = performance.now();
+      this.setState({ sheetData: this._sheetData(this.state.sheet, this.state.sheetData.natal) });
+    }
+    if (this._pjd !== this.jd) {
+      const prevPos = this.pos, prevAsc = this.asc;
+      this.pos = this.eph.positions(this.jd);
+      const ang0 = this.eph.angles(this.jd, this.lat, this.lng);
+      this.asc = ang0.asc;
+      this.pos.MC = ang0.mc;
+      this.pos.IC = this.norm(ang0.mc + 180);
+      this.pos.DSC = this.norm(this.asc + 180);
+      if (this.eph.vertex) this.pos.Vertex = this.eph.vertex(this.jd, this.lat, this.lng);
+      if (this.eph.partOfFortune) {
+        const isDay = this.norm(this.pos.Sun - this.asc) >= 180;
+        this.pos.Fortune = this.eph.partOfFortune(this.pos.Sun, this.pos.Moon, this.asc, isDay);
+      }
+      this._pjd = this.jd;
+      this._updateComposite();
+      if (this.held && prevPos) this._checkTicks(prevPos, prevAsc);
+    }
+    const rotTarget = this.frame === 'horizon' ? -this.asc : 0;
+    if (this._rot == null) {
+      this._rot = rotTarget; // first tick: snap straight to place, no animate-in glide
+    } else if (!(this.held && this.held !== 'ASC')) {
+      const dRot = this.wrap(rotTarget - this._rot);
+      this._rot = Math.abs(dRot) < 0.01 ? rotTarget : this._rot + dRot * Math.min(1, dt * 5);
+    }
+    this._draw();
+    this._readouts();
+    this._moonReadout();
+  }
+
+  _applyMagnet(raw) {
+    const m = this.state.settings.snapMagnet;
+    const held = this.held;
+    if (!m || !held || !this.eph) return raw;
+    const win = 1.5;
+    const h = Math.min(0.05, this.PERIODS[held] / 2000);
+    const isAsc = held === 'ASC';
+    const p1 = this._posAt(raw), p2 = this._posAt(raw + h);
+    const lonH1 = isAsc ? this.eph.angles(raw, this.lat, this.lng).asc : p1[held];
+    const lonH2 = isAsc ? this.eph.angles(raw + h, this.lat, this.lng).asc : p2[held];
+    const partners = this._partners(isAsc ? null : held);
+    const aspects = this._aspects();
+    let best = null;
+    for (const o of partners) {
+      const D1 = Math.abs(this.wrap(lonH1 - p1[o]));
+      const D2 = Math.abs(this.wrap(lonH2 - p2[o]));
+      for (const [ang] of aspects) {
+        const r1 = D1 - ang;
+        if (Math.abs(r1) > win) continue;
+        const v = (D2 - ang - r1) / h;
+        if (Math.abs(v) < 1e-6) continue;
+        if (!best || Math.abs(r1) < best.r) best = { dt: -r1 / v, r: Math.abs(r1) };
+      }
+    }
+    // the plate catches the hand — snap to exact hits on natal points
+    for (const t of this._natalTargets()) {
+      const Dn1 = Math.abs(this.wrap(lonH1 - t.lon));
+      const Dn2 = Math.abs(this.wrap(lonH2 - t.lon));
+      for (const [ang] of aspects) {
+        const r1 = Dn1 - ang;
+        if (Math.abs(r1) > win) continue;
+        const v = (Dn2 - ang - r1) / h;
+        if (Math.abs(v) < 1e-6) continue;
+        if (!best || Math.abs(r1) < best.r) best = { dt: -r1 / v, r: Math.abs(r1) };
+      }
+    }
+    const L1 = this.norm(lonH1);
+    const bnd = Math.round(L1 / 30) * 30;
+    const ri = this.wrap(L1 - bnd);
+    if (Math.abs(ri) <= win) {
+      const v = this.wrap(lonH2 - lonH1) / h;
+      if (Math.abs(v) > 1e-6 && (!best || Math.abs(ri) < best.r)) best = { dt: -ri / v, r: Math.abs(ri) };
+    }
+    if (!best) return raw;
+    if (Math.abs(best.dt) > this.PERIODS[held] * win / 360 * 8) return raw;
+    const u = 1 - best.r / win;
+    const w = m * u * u * (3 - 2 * u);
+    return Math.min(this.JD_MAX, Math.max(this.JD_MIN, raw + best.dt * w));
+  }
+
+  _aspectStatus() {
+    const held = this.held;
+    if (!held || !this.eph) return null;
+    const orb = this.state.settings.orb;
+    const h = Math.min(0.05, this.PERIODS[held] / 2000);
+    const isAsc = held === 'ASC';
+    const p2 = this._posAt(this.jd + h);
+    const lonH1 = isAsc ? this.asc : this.pos[held];
+    const lonH2 = isAsc ? this.eph.angles(this.jd + h, this.lat, this.lng).asc : p2[held];
+    const partners = this._partners(isAsc ? null : held);
+    const aspects = this._aspects();
+    let best = null;
+    for (const o of partners) {
+      const D1 = Math.abs(this.wrap(lonH1 - this.pos[o]));
+      const D2 = Math.abs(this.wrap(lonH2 - p2[o]));
+      for (const [ang] of aspects) {
+        const r1 = Math.abs(D1 - ang);
+        if (r1 > orb) continue;
+        if (!best || r1 < best.r) best = { r: r1, ang, o, applying: Math.abs(D2 - ang) < r1 };
+      }
+    }
+    for (const t of this._natalTargets()) {
+      const Dn1 = Math.abs(this.wrap(lonH1 - t.lon));
+      const Dn2 = Math.abs(this.wrap(lonH2 - t.lon));
+      for (const [ang] of aspects) {
+        const r1 = Math.abs(Dn1 - ang);
+        if (r1 > orb) continue;
+        if (!best || r1 < best.r) best = { r: r1, ang, o: t.name, natal: true, applying: Math.abs(Dn2 - ang) < r1 };
+      }
+    }
+    if (!best) return null;
+    const d = Math.floor(best.r);
+    const mm = String(Math.floor((best.r % 1) * 60)).padStart(2, '0');
+    const who = best.natal ? 'YOUR ' + (best.o === 'As' ? 'ASCENDANT' : best.o.toUpperCase()) : (this.LABEL[best.o] || best.o).toUpperCase();
+    return this.ASYM[best.ang] + ' ' + who + ' ' + d + '\u00B0' + mm + '\u2032 ' + (best.applying ? 'APPLYING' : 'SEPARATING');
+  }
+
+  _openSheet(name) {
+    this.setState({ sheet: name, sheetData: this._sheetData(name) });
+  }
+
+  // #9 — tap a natal engraving. A reading of YOU at that point: natal signification
+  // + the transits landing on it now. Flagged natal:true so _tick's live-refresh
+  // rebuilds the natal kind, not a same-named transit body.
+  _openNatalSheet(name) {
+    const sd = this._sheetDataNatal(name);
+    if (sd) this.setState({ sheet: name, sheetData: sd, lens: 'signif' });
+  }
+
+  _sheetDataNatal(name) {
+    const nat = this._natal();
+    const t = (this._natalTargets() || []).find((x) => x.name === name);
+    if (!nat || !t) return null;
+    const lon = t.lon;
+    const s = Math.floor(this.norm(lon) / 30);
+    const isAs = name === 'As';
+    const ascSign = nat.asc != null ? Math.floor(this.norm(nat.asc) / 30) : 0;
+    const signif = [{ k: 'sign', v: this.SIGN_NAMES[s] + ' \u00B7 ' + this.ELEM_NAME[s % 4] }];
+    if (!isAs && nat.asc != null) signif.push({ k: 'house', v: ((s - ascSign + 12) % 12 + 1) + ' \u00B7 whole sign' });
+    if (!isAs) {
+      const ruler = this.RULER_BY_SIGN[s];
+      signif.push({ k: 'dispositor', v: ruler === name ? 'itself \u2014 in its own sign' : this.GLYPH[ruler] + ' ' + ruler + ' in ' + this.SIGN_NAMES[Math.floor(this.norm(nat.pos[ruler]) / 30)] });
+    }
+    return {
+      jd: this.jd, name, natal: true, rx: false,
+      label: 'your ' + (isAs ? 'Ascendant' : (this.LABEL[name] || name)),
+      glyph: isAs ? 'As' : this.GLYPH[name],
+      color: this.ELEM[s % 4],
+      pos: this._fmtLong(lon) + ' \u00B7 ' + this.ELEM_NAME[s % 4] + ' \u00B7 engraved',
+      aspects: this._transitsToNatal(lon),
+      signif, motion: [], toYou: [],
+    };
+  }
+
+  // transits (ASC + active bodies) landing on a fixed natal degree, right now
+  _transitsToNatal(natLon) {
+    const orb = this.state.settings.orb;
+    const aspects = this._aspects();
+    const asc2 = this.eph.angles(this.jd + 0.02, this.lat, this.lng).asc;
+    const p2 = this._posAt(this.jd + 0.02);
+    const out = [];
+    for (const o of ['ASC', ...this._active()]) {
+      if (o === 'SNode') continue;
+      const o1 = o === 'ASC' ? this.asc : this.pos[o];
+      const o2 = o === 'ASC' ? asc2 : p2[o];
+      const D1 = Math.abs(this.wrap(o1 - natLon)), D2 = Math.abs(this.wrap(o2 - natLon));
+      for (const [ang] of aspects) {
+        const r1 = Math.abs(D1 - ang);
+        if (r1 > orb) continue;
+        const applying = Math.abs(D2 - ang) < r1;
+        out.push({
+          r: r1,
+          label: this.ASYM[ang] + '  ' + (o === 'ASC' ? 'Ascendant' : this.GLYPH[o] + ' ' + (this.LABEL[o] || o)),
+          orbStr: Math.floor(r1) + '\u00B0' + String(Math.floor((r1 % 1) * 60)).padStart(2, '0') + '\u2032',
+          phase: applying ? 'applying' : 'separating',
+          phaseColor: applying ? '#e8ab41' : '#857cb5',
+        });
+      }
+    }
+    return out.sort((a, b) => a.r - b.r);
+  }
+
+  _sheetData(name, natal) {
+    if (natal) return this._sheetDataNatal(name);
+    const lon = this.pos[name];
+    const s = Math.floor(this.norm(lon) / 30);
+    let rx = false;
+    if (!this.NO_RX.includes(name)) {
+      const ahead = this._posAt(this.jd + 0.2)[name];
+      rx = this.wrap(ahead - lon) < 0;
+    }
+    return {
+      jd: this.jd, name, rx,
+      label: this.LABEL[name] || name,
+      glyph: this.GLYPH[name],
+      color: this.ELEM[s % 4],
+      pos: this._fmtLong(lon) + ' \u00B7 ' + this.ELEM_NAME[s % 4],
+      aspects: this._aspectListFor(name),
+      signif: this._signifRows(name),
+      motion: this._motionRows(name),
+      toYou: this._toYouList(name),
+    };
+  }
+
+  _aspectListFor(name) {
+    const orb = this.state.settings.orb;
+    const h = Math.min(0.05, this.PERIODS[name] / 2000);
+    const p2 = this._posAt(this.jd + h);
+    const asc2 = this.eph.angles(this.jd + h, this.lat, this.lng).asc;
+    const lon1 = this.pos[name], lon2 = p2[name];
+    const aspects = this._aspects();
+    const out = [];
+    for (const o of ['ASC', ...this._active()]) {
+      if (o === name || o === 'SNode' || (name === 'SNode' && o === 'Node')) continue;
+      const o1 = o === 'ASC' ? this.asc : this.pos[o], o2 = o === 'ASC' ? asc2 : p2[o];
+      const D1 = Math.abs(this.wrap(lon1 - o1)), D2 = Math.abs(this.wrap(lon2 - o2));
+      for (const [ang] of aspects) {
+        const r1 = Math.abs(D1 - ang);
+        if (r1 > orb) continue;
+        const applying = Math.abs(D2 - ang) < r1;
+        out.push({
+          r: r1,
+          label: this.ASYM[ang] + '  ' + (o === 'ASC' ? 'Ascendant' : this.GLYPH[o] + ' ' + (this.LABEL[o] || o)),
+          orbStr: Math.floor(r1) + '\u00B0' + String(Math.floor((r1 % 1) * 60)).padStart(2, '0') + '\u2032',
+          phase: applying ? 'applying' : 'separating',
+          phaseColor: applying ? '#e8ab41' : '#857cb5',
+        });
+      }
+    }
+    return out.sort((a, b) => a.r - b.r);
+  }
+
+  _signifRows(name) {
+    const lon = this.pos[name];
+    const s = Math.floor(this.norm(lon) / 30);
+    const ascSign = Math.floor(this.norm(this.asc) / 30);
+    const TRAD = ['Sun','Moon','Mercury','Venus','Mars','Jupiter','Saturn'];
+    const rows = [];
+    rows.push({ k: 'sign', v: this.SIGN_NAMES[s] + ' · ' + this.ELEM_NAME[s % 4] });
+    if (TRAD.includes(name)) {
+      let dig = 'peregrine';
+      if (this.RULER_BY_SIGN[s] === name) dig = 'domicile';
+      else if (this.EXALT[name] === s) dig = 'exaltation';
+      else if (this.RULER_BY_SIGN[(s + 6) % 12] === name) dig = 'detriment';
+      else if (this.EXALT[name] === (s + 6) % 12) dig = 'fall';
+      rows.push({ k: 'dignity', v: dig });
+    }
+    const ruler = this.RULER_BY_SIGN[s];
+    if (ruler === name) rows.push({ k: 'dispositor', v: 'itself — in its own sign' });
+    else rows.push({ k: 'dispositor', v: this.GLYPH[ruler] + ' ' + ruler + ' in ' + this.SIGN_NAMES[Math.floor(this.norm(this.pos[ruler]) / 30)] });
+    rows.push({ k: 'house', v: ((s - ascSign + 12) % 12 + 1) + ' · whole sign' });
+    if (TRAD.includes(name)) {
+      const ruled = [];
+      for (let i = 0; i < 12; i++) if (this.RULER_BY_SIGN[i] === name) ruled.push((i - ascSign + 12) % 12 + 1);
+      rows.push({ k: 'rules houses', v: ruled.join(' & ') });
+    }
+    return rows;
+  }
+
+  _motionRows(name) {
+    const key = name + ':' + Math.floor(this.jd);
+    if (this._motionCache && this._motionCache.key === key) return this._motionCache.rows;
+    const h = 0.04;
+    const lonAt = (jd) => this._posAt(jd)[name];
+    const signAt = (jd) => Math.floor(this.norm(lonAt(jd)) / 30);
+    const vAt = (jd) => this.wrap(lonAt(jd + h) - lonAt(jd)) / h;
+    const lon = this.pos[name];
+    const v0 = this.wrap(lonAt(this.jd + h) - lon) / h;
+    const fmtD = (jd) => this.eph.jdToDate(jd).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+    const relDay = (jd) => { const d = Math.round(jd - this.jd); return d === 0 ? 'today' : d < 0 ? (-d) + 'd ago' : 'in ' + d + 'd'; };
+    const derived = name === 'Fortune' || name === 'Vertex' || name === 'MC' || name === 'IC'; // angle-derived — cycle daily, ingress timeline is noise
+    const canStation = !this.NO_RX.includes(name);
+    // speed qualifier: current daily motion vs the body's mean speed
+    const mean = 360 / this.PERIODS[name];
+    const ratio = Math.abs(v0) / mean;
+    const cls = ratio > 1.12 ? 'fast' : ratio < 0.55 ? 'slow' : 'average';
+    const speedRow = { k: 'motion', v: Math.abs(v0).toFixed(2) + '\u00B0/day \u00B7 ' + (v0 < 0 ? '\u211E retrograde' : 'direct') + ' \u00B7 ' + cls };
+
+    // — previous ingress (into the current sign): backward scan + bisect —
+    const step = Math.max(0.02, this.PERIODS[name] / 720);
+    const curSign = signAt(this.jd);
+    let enteredRow = null, entersRow = null;
+    if (!derived) {
+      let jdB = this.jd, foundP = null;
+      for (let i = 0; i < 1400; i++) {
+        const jdA = Math.max(this.JD_MIN, jdB - step);
+        if (signAt(jdA) !== curSign) { foundP = [jdA, jdB]; break; }
+        jdB = jdA; if (jdA <= this.JD_MIN) break;
+      }
+      if (foundP) { let [a, b] = foundP; for (let i = 0; i < 26; i++) { const m = (a + b) / 2; if (signAt(m) === curSign) b = m; else a = m; } enteredRow = { k: 'entered ' + this.SIGN_NAMES[curSign], v: fmtD(b) + ' \u00B7 ' + relDay(b) }; }
+      // — next ingress: forward scan + bisect —
+      let jdA = this.jd, foundN = null;
+      for (let i = 0; i < 1400; i++) {
+        const jdC = Math.min(this.JD_MAX, jdA + step);
+        if (signAt(jdC) !== curSign) { foundN = [jdA, jdC]; break; }
+        jdA = jdC; if (jdC >= this.JD_MAX) break;
+      }
+      if (foundN) { let [a, b] = foundN; for (let i = 0; i < 26; i++) { const m = (a + b) / 2; if (signAt(m) === curSign) a = m; else b = m; } entersRow = { k: 'enters ' + this.SIGN_NAMES[signAt(b)], v: fmtD(b) + ' \u00B7 ' + relDay(b) }; }
+    }
+
+    // — stations: next always; previous only when currently retrograde (symmetric context) —
+    let turnedRow = null, nextStRow = null;
+    if (canStation) {
+      const sStep = Math.min(20, Math.max(1, this.PERIODS[name] / 400));
+      let a2 = this.jd, va = v0, hit = null;
+      for (let i = 0; i < 500; i++) { const b2 = Math.min(this.JD_MAX, a2 + sStep), vb = vAt(b2); if (va * vb <= 0) { hit = [a2, b2, va]; break; } a2 = b2; va = vb; if (b2 >= this.JD_MAX) break; }
+      if (hit) { let [a3, b3, va3] = hit; for (let i = 0; i < 22; i++) { const m = (a3 + b3) / 2, vm = vAt(m); if (va3 * vm > 0) { a3 = m; va3 = vm; } else b3 = m; } const sj = (a3 + b3) / 2; nextStRow = { k: 'next station', v: (v0 >= 0 ? 'turns \u211E' : 'turns direct') + ' \u00B7 ' + fmtD(sj) + ' \u00B7 ' + relDay(sj) }; }
+      if (v0 < 0) {
+        let a4 = this.jd, vc = v0, hit2 = null;
+        for (let i = 0; i < 500; i++) { const b4 = Math.max(this.JD_MIN, a4 - sStep), vb = vAt(b4); if (vc * vb <= 0) { hit2 = [b4, a4, vb]; break; } a4 = b4; vc = vb; if (b4 <= this.JD_MIN) break; }
+        if (hit2) { let [a5, b5, va5] = hit2; for (let i = 0; i < 22; i++) { const m = (a5 + b5) / 2, vm = vAt(m); if (va5 * vm > 0) { a5 = m; va5 = vm; } else b5 = m; } const sj = (a5 + b5) / 2; turnedRow = { k: 'turned \u211E', v: fmtD(sj) + ' \u00B7 ' + relDay(sj) }; }
+      }
+    }
+
+    // assemble in timeline order: past \u2192 now \u2192 future
+    const rows = [];
+    if (enteredRow) rows.push(enteredRow);
+    if (turnedRow) rows.push(turnedRow);
+    rows.push(speedRow);
+    if (entersRow) rows.push(entersRow);
+    if (nextStRow) rows.push(nextStRow);
+    if (derived) rows.push({ k: 'note', v: 'a derived point \u2014 moves with the Ascendant' });
+    this._motionCache = { key, rows };
+    return rows;
+  }
+
+  // ♋ Moon panel — next exact new/full moon crossing (elongation target 0 or 180)
+  _nextMoonEvent(target) {
+    if (!this.eph) return null;
+    const f = (jd) => this.wrap(this.norm(this.eph.positions(jd).Moon - this.eph.positions(jd).Sun) - target);
+    let a = this.jd, fa = f(a);
+    const step = 0.5;
+    for (let i = 0; i < 80; i++) {
+      const b = Math.min(this.JD_MAX, a + step), fb = f(b);
+      if (fa * fb <= 0 && b > a) {
+        let lo = a, hi = b, flo = fa;
+        for (let j = 0; j < 24; j++) { const m = (lo + hi) / 2, fm = f(m); if (flo * fm <= 0) hi = m; else { lo = m; flo = fm; } }
+        return (lo + hi) / 2;
+      }
+      a = b; fa = fb;
+      if (b >= this.JD_MAX) break;
+    }
+    return null;
+  }
+
+  // Void-of-course is a placeholder for now — real VoC needs "last aspect before sign change"
+  // scanned against every active body, which is a heavier lookahead than the rest of this panel.
+
+  _moonReadout() {
+    if (this.state.panel !== 'moon' || !this.eph || !this.pos) return;
+    const set = (ref, key, val) => { if (this._lastReadout[key] !== val && ref.current) { ref.current.textContent = val; this._lastReadout[key] = val; } };
+    const elong = this.norm(this.pos.Moon - this.pos.Sun);
+    const k = (1 - Math.cos(elong * Math.PI / 180)) / 2;
+    const waxing = elong < 180;
+    const names = ['New Moon', 'Waxing Crescent', 'First Quarter', 'Waxing Gibbous', 'Full Moon', 'Waning Gibbous', 'Last Quarter', 'Waning Crescent'];
+    const bucket = Math.round(elong / 45) % 8;
+    set(this.moonNameRef, 'moonName', names[bucket]);
+    set(this.moonPctRef, 'moonPct', Math.round(k * 100) + '% illuminated \u00B7 ' + (waxing ? 'waxing' : 'waning'));
+    set(this.moonSignRef, 'moonSign', this._fmtLong(this.pos.Moon));
+    const ing = this._motionRows('Moon').find((r) => r.k === 'next ingress');
+    set(this.moonIngressRef, 'moonIngress', ing ? ing.v : '\u2014');
+    const c = this.moonCanvasRef.current;
+    if (c) {
+      const dpr = window.devicePixelRatio || 1;
+      if (c.width !== 72 * dpr) { c.width = 72 * dpr; c.height = 72 * dpr; }
+      const ctx = c.getContext('2d');
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.clearRect(0, 0, 72, 72);
+      // S1: shared terminator painter \u2014 see _moonFace (also the wheel + header).
+      this._moonFace(ctx, 36, 36, 30, this.pos.Sun, this.pos.Moon, { dark: '#140e30' });
+    }
+  }
+
+  _checkTicks(prevPos, prevAsc) {
+    const lonOf = (p, a, n) => n === 'ASC' ? a : p[n];
+    const cur = lonOf(this.pos, this.asc, this.held);
+    const prev = lonOf(prevPos, prevAsc, this.held);
+    if (cur === undefined || prev === undefined || cur === prev) return;
+    let kind = null;
+    if (Math.floor(this.norm(prev)) !== Math.floor(this.norm(cur))) {
+      kind = Math.floor(this.norm(prev) / 30) !== Math.floor(this.norm(cur) / 30) ? 'sign' : 'deg';
+    }
+    const aspects = this._aspects();
+    const others = ['ASC', ...this._active()].filter((n) => n !== this.held && n !== 'SNode' && !(this.held === 'SNode' && n === 'Node'));
+    outer: for (const o of others) {
+      const oPrev = lonOf(prevPos, prevAsc, o), oCur = lonOf(this.pos, this.asc, o);
+      if (oPrev === undefined || oCur === undefined) continue;
+      const dPrev = Math.abs(this.wrap(prev - oPrev)), dCur = Math.abs(this.wrap(cur - oCur));
+      for (const [ang] of aspects) {
+        if (Math.abs(dCur - ang) > 6 && Math.abs(dPrev - ang) > 6) continue;
+        if ((dPrev - ang) * (dCur - ang) <= 0) { kind = 'aspect'; break outer; }
+      }
+    }
+    if (kind !== 'aspect') {
+      outer2: for (const t of this._natalTargets()) {
+        const dPrev = Math.abs(this.wrap(prev - t.lon)), dCur = Math.abs(this.wrap(cur - t.lon));
+        for (const [ang] of aspects) {
+          if (Math.abs(dCur - ang) > 6 && Math.abs(dPrev - ang) > 6) continue;
+          if ((dPrev - ang) * (dCur - ang) <= 0) { kind = 'aspect'; break outer2; }
+        }
+      }
+    }
+    if (kind) this._pulseFx(kind);
+  }
+
+  _pulseFx(kind) {
+    this._pulse = { t0: performance.now(), kind };
+    if (this.state.settings.haptics && navigator.vibrate) {
+      navigator.vibrate(kind === 'flip' ? [24, 60, 30] : kind === 'aspect' ? [12, 40, 20] : kind === 'sign' ? 16 : 5);
+    }
+  }
+
+  _natalJd() {
+    const n = this.state.natal;
+    if (!n.date) return null;
+    const d = new Date(n.date + 'T' + (n.time || '12:00'));
+    if (isNaN(d)) return null;
+    return d.getTime() / 86400000 + 2440587.5;
+  }
+
+  // the plate — your natal, cached; null only when no chart is engraved.
+  // O4 (one seat, one law): the seat picker is the canonical plate control. The plate
+  // is always "you" whenever a natal exists — natal-me (stone) or composite-me (gilt),
+  // chosen at the seat. showNatal is RETIRED: it no longer gates the plate. Truth table:
+  //   natal unset            → no plate (seat card reads "No plate · engrave on the back")
+  //   natal set, composite=0 → stone engravings (Natal me)
+  //   natal set, composite=1 → gilt beads, natal marks recede to anchors (Composite me)
+  _natal() {
+    if (!this.eph) return null;
+    const njd = this._natalJd();
+    if (!njd) return null;
+    if (this._natalKey !== njd) {
+      this._natalKey = njd;
+      this._natalPos = this.eph.positions(njd);
+      const la = parseFloat(this.state.natal.lat), lo = parseFloat(this.state.natal.lon);
+      this._natalAsc = isFinite(la) && isFinite(lo) ? this.eph.angles(njd, la, lo).asc : null;
+    }
+    return { pos: this._natalPos, asc: this._natalAsc };
+  }
+  _natalTargets() {
+    const n = this._natal();
+    if (!n) return [];
+    const out = this.BODIES.map((b) => ({ name: b, lon: n.pos[b] }));
+    if (n.asc != null) out.push({ name: 'As', lon: n.asc });
+    return out;
+  }
+
+  // \u2013\u2013 \u2653 engine lift \u2014 the live composite data layer, recomputed per jd.
+  // Pure plumbing over framing.js (midpoint / arcFor / wrap180) \u2014 nothing renders
+  // or grabs it here. Keeps three siblings current for the plate mechanics (design
+  // map \u2653 steps 2\u20134) to build against:
+  //   this.comp     flat {body|cASC: lon}          \u2014 the bead longitudes (step 2 reads this)
+  //   this.compArc  {body|cASC: {center,start,end}} \u2014 the 180\u00b0 channel cut in the plate,
+  //                                                   centered on the natal mark (step 3\u20134)
+  //   this.compFlip {body|cASC: bool}              \u2014 true only on the tick the bead jumps
+  //                                                   ~180\u00b0 (transit hit natal opposition);
+  //                                                   the composite's ingress-grade event.
+  // A flip is a >150\u00b0 leap between consecutive comp longitudes \u2014 the bead draining out
+  // one channel stop and welling up at the other, never sliding through the natal notch. \u2013\u2013
+  _updateComposite() {
+    const nat = this._natal();
+    if (!nat || !this.framing) { this.comp = this.compArc = this.compFlip = null; this._prevComp = null; return; }
+    const F = this.framing;
+    const comp = {}, arc = {}, flip = {}, prev = this._prevComp;
+    const set = (key, natLon, momLon) => {
+      if (natLon == null || momLon == null) return;
+      const lon = F.midpoint(natLon, momLon);
+      comp[key] = lon;
+      arc[key] = F.arcFor(natLon); // natal degree is the arc's CENTER; ends = natal \u00b190
+      flip[key] = prev && prev[key] != null ? Math.abs(F.wrap180(lon - prev[key])) > 150 : false;
+    };
+    for (const b of this.BODIES) set(b, nat.pos[b], this.pos[b]);
+    set('cASC', nat.asc, this.asc);
+    this.comp = comp; this.compArc = arc; this.compFlip = flip; this._prevComp = comp;
+  }
+  _toYouList(name) {
+    const targets = this._natalTargets();
+    if (!targets.length) return [];
+    const orb = this.state.settings.orb;
+    const h = Math.min(0.05, this.PERIODS[name] / 2000);
+    const lon1 = this.pos[name];
+    const lon2 = this._posAt(this.jd + h)[name];
+    const aspects = this._aspects();
+    const out = [];
+    for (const t of targets) {
+      const D1 = Math.abs(this.wrap(lon1 - t.lon)), D2 = Math.abs(this.wrap(lon2 - t.lon));
+      for (const [ang] of aspects) {
+        const r1 = Math.abs(D1 - ang);
+        if (r1 > orb) continue;
+        const applying = Math.abs(D2 - ang) < r1;
+        out.push({
+          r: r1,
+          label: this.ASYM[ang] + '  your ' + (t.name === 'As' ? 'Ascendant' : this.GLYPH[t.name] + ' ' + t.name),
+          orbStr: Math.floor(r1) + '\u00B0' + String(Math.floor((r1 % 1) * 60)).padStart(2, '0') + '\u2032',
+          phase: applying ? 'applying' : 'separating',
+          phaseColor: applying ? '#e8ab41' : '#857cb5',
+        });
+      }
+    }
+    return out.sort((a, b) => a.r - b.r);
+  }
+
+  _draw() {
+    const c = this.canvasRef.current, ctx = c.getContext('2d');
+    const { w, cx, cy, R } = this;
+    ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
+    ctx.clearRect(0, 0, w, w);
+    const orb = this.state.settings.orb;
+    const rDeep = R - 88;
+    ctx.save();
+    ctx.shadowColor = 'rgba(0,0,0,0.6)'; ctx.shadowBlur = 22; ctx.shadowOffsetY = 8;
+    ctx.fillStyle = '#181143';
+    ctx.beginPath(); ctx.arc(cx, cy, R + 5, 0, 7); ctx.fill();
+    ctx.restore();
+    ctx.strokeStyle = 'rgba(190,184,226,0.3)'; ctx.lineWidth = 1.3;
+    ctx.beginPath(); ctx.arc(cx, cy, R + 5, 0, 7); ctx.stroke();
+    ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+    ctx.beginPath(); ctx.arc(cx, cy, R + 3, 0, 7); ctx.stroke();
+    // –– the limb as material: off / engraved / brass / silver (♌ Appearance).
+    // brass = the Sun's rim, silver = the Moon's — same anatomy, twin metals.
+    const metal = this.state.skin.metal || 'none';
+    const brassLimb = metal === 'brass';
+    const silverLimb = metal === 'silver';
+    const metalLimb = brassLimb || silverLimb;
+    const limbFaces = !!this.state.skin.faces;
+    const MP = silverLimb
+      ? { g0: '#dfe2ea', g1: '#98a0b2', g2: '#646c7e', g3: '#98a0b2', g4: '#474e5e', hi: '235,240,250', dk: '14,16,24', stamp: 'rgba(16,18,26,0.88)', leak: 'rgba(240,244,255,0.34)' }
+      : { g0: '#d9b06a', g1: '#9c7330', g2: '#6e4d1d', g3: '#9c7330', g4: '#553a12', hi: '255,238,196', dk: '24,12,0', stamp: 'rgba(32,16,0,0.88)', leak: 'rgba(255,240,205,0.32)' };
+    if (metalLimb) {
+      const ring = () => { ctx.beginPath(); ctx.arc(cx, cy, R + 5, 0, Math.PI * 2); ctx.arc(cx, cy, R - 13, Math.PI * 2, 0, true); };
+      // base metal — directional sheen
+      const mg = ctx.createLinearGradient(cx - R, cy - R, cx + R, cy + R);
+      mg.addColorStop(0, MP.g0); mg.addColorStop(0.25, MP.g1); mg.addColorStop(0.52, MP.g2); mg.addColorStop(0.78, MP.g3); mg.addColorStop(1, MP.g4);
+      ring(); ctx.fillStyle = mg; ctx.fill();
+      // radial polish — bevel shading across the band
+      const pg = ctx.createRadialGradient(cx, cy, R - 13, cx, cy, R + 5);
+      pg.addColorStop(0, 'rgba(' + MP.dk + ',0.4)'); pg.addColorStop(0.22, 'rgba(' + MP.hi + ',0.16)'); pg.addColorStop(0.55, 'rgba(255,255,255,0)'); pg.addColorStop(0.9, 'rgba(' + MP.dk + ',0.28)'); pg.addColorStop(1, 'rgba(' + MP.hi + ',0.2)');
+      ring(); ctx.fillStyle = pg; ctx.fill();
+      ctx.lineWidth = 1;
+      ctx.strokeStyle = 'rgba(' + MP.hi + ',0.45)';
+      ctx.beginPath(); ctx.arc(cx, cy, R + 5, 0, 7); ctx.stroke();
+      ctx.strokeStyle = 'rgba(' + MP.dk + ',0.5)';
+      ctx.beginPath(); ctx.arc(cx, cy, R - 13, 0, 7); ctx.stroke();
+      // register line between the graduated edge and the stamped decan band
+      if (limbFaces) {
+        ctx.strokeStyle = 'rgba(' + MP.dk + ',0.35)';
+        ctx.beginPath(); ctx.arc(cx, cy, R - 6.5, 0, 7); ctx.stroke();
+        ctx.strokeStyle = 'rgba(' + MP.hi + ',0.12)';
+        ctx.beginPath(); ctx.arc(cx, cy, R - 7.5, 0, 7); ctx.stroke();
+      }
+    }
+    const vg = ctx.createRadialGradient(cx, cy, 0, cx, cy, rDeep);
+    vg.addColorStop(0, 'rgba(6,4,18,0.38)'); vg.addColorStop(1, 'rgba(6,4,18,0)');
+    ctx.fillStyle = vg;
+    ctx.beginPath(); ctx.arc(cx, cy, rDeep, 0, 7); ctx.fill();
+    if (!this._stars) {
+      this._stars = [];
+      let sd = 42;
+      const rnd = () => (sd = (sd * 16807) % 2147483647) / 2147483647;
+      for (let i = 0; i < 46; i++) this._stars.push({ lon: rnd() * 360, rr: Math.sqrt(rnd()), a: 0.1 + rnd() * 0.28, sz: 0.5 + rnd() * 0.9, k: rnd() < 0.5 ? 0.18 : 0.35 });
+    }
+    // parallax — the void lags the instrument: two star depths, two rates, causal only
+    // (tied to the wheel's rotation; nothing drifts on its own). ♐ Appearance toggle.
+    const parOn = this.state.skin.parallax !== false;
+    const rotNow = this._rot || 0;
+    for (const st of this._stars) {
+      const pa = (180 + st.lon + rotNow * (parOn ? st.k : 1)) * Math.PI / 180;
+      const pr = st.rr * (rDeep - 6);
+      const sx = cx + pr * Math.cos(pa), sy = cy - pr * Math.sin(pa);
+      ctx.fillStyle = 'rgba(236,232,248,' + st.a + ')';
+      ctx.beginPath(); ctx.arc(sx, sy, st.sz, 0, 7); ctx.fill();
+    }
+    const showWeb = this.state.settings.showWeb;
+    const rSignOut = R - 12, rSignIn = R - 36, rBody = R - 58, rAsp = R - 88;
+
+    for (let d = 0; d < 360; d++) {
+      const len = metalLimb ? (d % 30 === 0 ? 6 : d % 10 === 0 ? 4.5 : d % 5 === 0 ? 3.2 : 2.2) : (d % 30 === 0 ? 12 : d % 10 === 0 ? 9 : d % 5 === 0 ? 6.5 : 4);
+      const a = d % 30 === 0 ? 0.5 : d % 10 === 0 ? 0.32 : 0.18;
+      ctx.strokeStyle = metalLimb ? 'rgba(' + MP.dk + ',' + Math.min(1, a + 0.3) + ')' : 'rgba(190,184,226,' + a + ')';
+      ctx.lineWidth = d % 30 === 0 ? 1.4 : 1;
+      const [x1, y1] = this._xy(d, R - len, true), [x2, y2] = this._xy(d, R, true);
+      ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+    }
+    ctx.strokeStyle = 'rgba(190,184,226,0.22)'; ctx.lineWidth = 1;
+    for (const r of [rSignOut, rSignIn]) { ctx.beginPath(); ctx.arc(cx, cy, r, 0, 7); ctx.stroke(); }
+    for (let k = 0; k < 12; k++) {
+      const [x1, y1] = this._xy(k * 30, rSignIn), [x2, y2] = this._xy(k * 30, rSignOut);
+      ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+      const [gx, gy] = this._xy(k * 30 + 15, (rSignOut + rSignIn) / 2);
+      ctx.fillStyle = this.ELEM[k % 4];
+      ctx.shadowColor = this.ELEM[k % 4]; ctx.shadowBlur = 9;
+      ctx.font = '16px "Noto Sans Symbols 2","Segoe UI Symbol","Apple Symbols",serif';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(this.SIGNS[k], gx, gy);
+      ctx.shadowBlur = 0;
+    }
+    for (let k = 0; k < 12; k++) {
+      const a1 = -((180 + k * 30 + (this._rot || 0)) * Math.PI / 180), a2 = -((180 + k * 30 + 30 + (this._rot || 0)) * Math.PI / 180);
+      ctx.fillStyle = this.ELEM[k % 4];
+      ctx.globalAlpha = 0.05;
+      ctx.beginPath();
+      ctx.arc(cx, cy, rSignIn - 1, a1, a2, true);
+      ctx.arc(cx, cy, rAsp, a2, a1, false);
+      ctx.closePath(); ctx.fill();
+      ctx.globalAlpha = 1;
+      const [sx1, sy1] = this._xy(k * 30, rAsp), [sx2, sy2] = this._xy(k * 30, rSignIn);
+      ctx.strokeStyle = 'rgba(190,184,226,0.1)'; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(sx1, sy1); ctx.lineTo(sx2, sy2); ctx.stroke();
+    }
+
+    if (limbFaces) {
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.font = '7.5px "Noto Sans Symbols 2","Segoe UI Symbol","Apple Symbols",serif';
+      for (let i = 0; i < 36; i++) {
+        const g = this.CHALD[(2 + i) % 7];
+        if (metalLimb) {
+          // seams — dark cut with a light edge, full height of the metal band
+          const [bx, by] = this._xy(i * 10, R - 13), [bx2, by2] = this._xy(i * 10, R + 5);
+          ctx.strokeStyle = 'rgba(' + MP.dk + ',0.45)'; ctx.lineWidth = 1;
+          ctx.beginPath(); ctx.moveTo(bx, by); ctx.lineTo(bx2, by2); ctx.stroke();
+          const [lx, ly] = this._xy(i * 10 - 0.55, R - 13), [lx2, ly2] = this._xy(i * 10 - 0.55, R + 5);
+          ctx.strokeStyle = 'rgba(' + MP.hi + ',0.14)';
+          ctx.beginPath(); ctx.moveTo(lx, ly); ctx.lineTo(lx2, ly2); ctx.stroke();
+          // ruler glyph stamped into the metal — light leak below, dark cut on top
+          const [mx, my] = this._xy(i * 10 + 5, R - 9.7);
+          ctx.fillStyle = MP.leak;
+          ctx.fillText(g, mx + 0.4, my + 0.8);
+          ctx.fillStyle = MP.stamp;
+          ctx.fillText(g, mx, my);
+        } else {
+          const [bx, by] = this._xy(i * 10, R - 6), [bx2, by2] = this._xy(i * 10, R);
+          ctx.strokeStyle = 'rgba(232,171,65,0.3)'; ctx.lineWidth = 1;
+          ctx.beginPath(); ctx.moveTo(bx, by); ctx.lineTo(bx2, by2); ctx.stroke();
+          const [mx, my] = this._xy(i * 10 + 5, R - 5.5);
+          ctx.fillStyle = '#181143';
+          ctx.beginPath(); ctx.arc(mx, my, 5, 0, 7); ctx.fill();
+          ctx.fillStyle = 'rgba(190,184,226,0.6)';
+          ctx.fillText(g, mx, my);
+        }
+      }
+    }
+    if (this.state.skin.houseNums && this.asc != null) {
+      const ascSign = Math.floor(this.norm(this.asc) / 30);
+      ctx.font = '8px "Avenir Next","Century Gothic",sans-serif';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillStyle = 'rgba(190,184,226,0.42)';
+      for (let i = 0; i < 12; i++) {
+        const [hx, hy] = this._xy(((ascSign + i) % 12) * 30 + 15, rSignIn - 8);
+        ctx.fillText(String(i + 1), hx, hy);
+      }
+    }
+
+    const bz = ctx.createRadialGradient(cx, cy, rSignIn - 30, cx, cy, rSignIn);
+    bz.addColorStop(0, 'rgba(5,3,15,0)'); bz.addColorStop(1, 'rgba(5,3,15,0.32)');
+    ctx.fillStyle = bz;
+    ctx.beginPath(); ctx.arc(cx, cy, rSignIn, 0, 7); ctx.fill();
+
+    ctx.strokeStyle = 'rgba(190,184,226,0.14)';
+    ctx.beginPath(); ctx.arc(cx, cy, rAsp, 0, 7); ctx.stroke();
+
+    const act = this._active();
+    const natT = this._natalTargets();
+    const rete = this.state.rete || 'sky';
+    const skyOn = rete === 'sky';
+    if (!skyOn) this._screen = {}; // no sky glyphs — nothing up there to grab
+    const rN = rBody - 17; // the plate — engraved beneath the moving light, nearly the same radius
+    // plate hit-maps — rebuilt each frame, parallel to this._screen (transit bodies).
+    // _natalScreen feeds the natal-engraving tap (#9); _beadScreen feeds bead grab (♓3).
+    this._natalScreen = {}; this._beadScreen = {};
+
+    if (natT.length) {
+      // the plate — a recessed stone band sunk beneath the sky's track
+      ctx.fillStyle = 'rgba(4,2,14,0.3)';
+      ctx.beginPath(); ctx.arc(cx, cy, rN + 11, 0, 7); ctx.arc(cx, cy, rN - 11, 7, 0, true); ctx.fill();
+      ctx.strokeStyle = 'rgba(4,2,14,0.5)'; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.arc(cx, cy, rN + 10.5, 0, 7); ctx.stroke();
+      ctx.strokeStyle = 'rgba(190,184,226,0.1)';
+      ctx.beginPath(); ctx.arc(cx, cy, rN + 11.5, 0, 7); ctx.stroke();
+      ctx.strokeStyle = 'rgba(226,220,250,0.07)';
+      ctx.beginPath(); ctx.arc(cx, cy, rN - 11, 0, 7); ctx.stroke();
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      const compOn = this.state.composite && this.comp;
+      for (const t of natT) {
+        const [nx, ny] = this._xy(t.lon, rN);
+        this._natalScreen[t.name] = [nx, ny];
+        const isAs = t.name === 'As';
+        const g = isAs ? 'As' : this.GLYPH[t.name];
+        if (compOn) {
+          // composite holds the plate seat — the natal mark recedes to a stamped anchor point
+          ctx.fillStyle = 'rgba(190,184,226,0.22)';
+          ctx.beginPath(); ctx.arc(nx, ny, 1.6, 0, 7); ctx.fill();
+          continue;
+        }
+        // intaglio — the recess cut into the stone
+        ctx.fillStyle = 'rgba(5,3,18,0.34)';
+        ctx.beginPath(); ctx.arc(nx, ny, 9, 0, 7); ctx.fill();
+        // light catching the recess's lower rim
+        ctx.strokeStyle = 'rgba(226,220,250,0.12)'; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.arc(nx, ny, 9, Math.PI * 0.15, Math.PI * 0.85); ctx.stroke();
+        // debossed lettering — pale glyph, dark shadow pressed in from above
+        ctx.font = isAs ? 'bold 9.5px "Avenir Next","Century Gothic",sans-serif' : '14px "Noto Sans Symbols 2","Segoe UI Symbol","Apple Symbols",serif';
+        ctx.save();
+        ctx.shadowColor = 'rgba(4,2,14,0.95)'; ctx.shadowBlur = 1.6; ctx.shadowOffsetY = -1.1;
+        ctx.fillStyle = 'rgba(233,229,252,0.85)';
+        ctx.fillText(g, nx, ny + 0.5);
+        ctx.restore();
+        // mirrored degree tick — inward from the band's inner lip
+        const [i1x, i1y] = this._xy(t.lon, rN - 11), [i2x, i2y] = this._xy(t.lon, rN - 16);
+        ctx.strokeStyle = 'rgba(190,184,226,0.38)'; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(i1x, i1y); ctx.lineTo(i2x, i2y); ctx.stroke();
+      }
+    }
+
+    // –– ♓ composite (You × moment) — the LIVED chart. gilt glyphs riding the plate radius
+    // in the natal's seat; the 180° channel stays dark until its bead is held. ––
+    if (this.state.composite && this.comp && natT.length) {
+      const rest = !this.held && !this.playing;
+      const heldB = this._heldBeadKey();
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      for (const t of natT) {
+        const cLon = t.name === 'As' ? this.comp.cASC : this.comp[t.name];
+        if (cLon == null) continue;
+        const beadKey = t.name === 'As' ? 'cASC' : t.name;
+        const isAs = t.name === 'As';
+        const isHeld = heldB === beadKey;
+        const arc = this.compArc && this.compArc[beadKey];
+        const rSeat = isAs ? R + 1 : rN; // cAs rides the rim — a gilt twin to the As badge
+        const [nx, ny] = this._xy(t.lon, rSeat);
+        const [bx, by] = this._xy(cLon, rSeat);
+        this._beadScreen[beadKey] = [bx, by];
+        // flip — the bead drained out one stop and welled up at the other
+        if (this.compFlip && this.compFlip[beadKey]) {
+          this._beadPulse = { t0: performance.now(), key: beadKey };
+          if (isHeld) this._pulseFx('flip');
+        }
+        if (isHeld && arc) {
+          // the channel, lit end-to-end — a cut slot pouring molten light
+          const aS = this._canvasAng(arc.start), aE = this._canvasAng(arc.end);
+          ctx.lineCap = 'round';
+          // light leaking at the cut's edges
+          ctx.strokeStyle = 'rgba(255,240,205,0.1)'; ctx.lineWidth = 8;
+          ctx.beginPath(); ctx.arc(cx, cy, rSeat, aS, aE, true); ctx.stroke();
+          // the slot
+          ctx.strokeStyle = 'rgba(4,2,14,0.6)'; ctx.lineWidth = 6;
+          ctx.beginPath(); ctx.arc(cx, cy, rSeat, aS, aE, true); ctx.stroke();
+          // the pour
+          ctx.strokeStyle = 'rgba(232,171,65,0.55)'; ctx.lineWidth = 2.2;
+          ctx.shadowColor = 'rgba(232,171,65,0.8)'; ctx.shadowBlur = 8;
+          ctx.beginPath(); ctx.arc(cx, cy, rSeat, aS, aE, true); ctx.stroke();
+          ctx.shadowBlur = 0;
+          ctx.lineCap = 'butt';
+          // the two flip stops — engraved terminals, glowing
+          for (const endLon of [arc.start, arc.end]) {
+            const [ex, ey] = this._xy(endLon, rSeat);
+            ctx.fillStyle = 'rgba(10,6,32,0.92)';
+            ctx.beginPath(); ctx.arc(ex, ey, 4.6, 0, 7); ctx.fill();
+            ctx.strokeStyle = 'rgba(232,171,65,0.9)'; ctx.lineWidth = 1.4;
+            ctx.shadowColor = 'rgba(232,171,65,0.9)'; ctx.shadowBlur = 10;
+            ctx.beginPath(); ctx.arc(ex, ey, 4.6, 0, 7); ctx.stroke();
+            ctx.shadowBlur = 0;
+          }
+          // the natal anchor at the channel's center
+          ctx.fillStyle = 'rgba(232,171,65,0.85)';
+          ctx.beginPath(); ctx.arc(nx, ny, 2, 0, 7); ctx.fill();
+        }
+        // the bead — a gilt glyph, stamped. identity first: this IS the chart.
+        const br = isAs ? (isHeld ? 12 : 10.5) : (isHeld ? 10 : 8);
+        const alpha = isHeld ? 1 : rest ? 0.92 : 0.7;
+        if (isHeld) { ctx.shadowColor = 'rgba(232,171,65,0.9)'; ctx.shadowBlur = 14; }
+        this._giltBead(ctx, bx, by, br, alpha, false);
+        ctx.shadowBlur = 0;
+        // the stamped cut, with a light-leak under-edge
+        ctx.font = isAs
+          ? 'bold ' + (isHeld ? 11 : 10) + 'px "Avenir Next","Century Gothic",sans-serif'
+          : (isHeld ? 'bold 15px ' : '13px ') + '"Noto Sans Symbols 2","Segoe UI Symbol","Apple Symbols",serif';
+        const g2 = isAs ? 'As' : this.GLYPH[t.name];
+        ctx.fillStyle = 'rgba(255,244,214,' + (alpha * 0.5) + ')';
+        ctx.fillText(g2, bx, by + 1.3);
+        ctx.fillStyle = 'rgba(46,29,6,' + alpha + ')';
+        ctx.fillText(g2, bx, by + 0.4);
+        if (!isAs) {
+          // mirrored degree tick — gilt, inward from the band's inner lip
+          const [i1x, i1y] = this._xy(cLon, rN - 11), [i2x, i2y] = this._xy(cLon, rN - 16);
+          ctx.strokeStyle = 'rgba(232,171,65,' + (alpha * 0.55) + ')'; ctx.lineWidth = 1;
+          ctx.beginPath(); ctx.moveTo(i1x, i1y); ctx.lineTo(i2x, i2y); ctx.stroke();
+        }
+      }
+      // flip afterglow — gilt welling up where the bead re-emerged
+      if (this._beadPulse) {
+        const age = (performance.now() - this._beadPulse.t0) / 450;
+        const pt = this._beadScreen[this._beadPulse.key];
+        if (age < 1 && pt) {
+          ctx.globalAlpha = (1 - age) * 0.85;
+          ctx.strokeStyle = '#e8ab41'; ctx.lineWidth = 1.6;
+          ctx.beginPath(); ctx.arc(pt[0], pt[1], 10 + age * 26, 0, 7); ctx.stroke();
+          ctx.globalAlpha = (1 - age) * 0.5;
+          ctx.beginPath(); ctx.arc(pt[0], pt[1], 10 + age * 14, 0, 7); ctx.stroke();
+          ctx.globalAlpha = 1;
+        } else if (age >= 1) this._beadPulse = null;
+      }
+    }
+
+    if (act.includes('Node')) {
+      const [n1x, n1y] = this._xy(this.pos.Node, rAsp), [n2x, n2y] = this._xy(this.pos.SNode, rAsp);
+      ctx.setLineDash([3, 5]);
+      ctx.strokeStyle = 'rgba(220,214,240,0.2)'; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(n1x, n1y); ctx.lineTo(n2x, n2y); ctx.stroke();
+      ctx.setLineDash([]);
+    }
+
+    const aspects = this._aspects();
+    const lons = { ASC: this.asc };
+    for (const b of act) if (b !== 'SNode') lons[b] = this.pos[b];
+    const names = Object.keys(lons);
+    if (skyOn) for (let i = 0; i < names.length; i++) for (let j = i + 1; j < names.length; j++) {
+      const a = names[i], b = names[j];
+      const diff = Math.abs(this.wrap(lons[a] - lons[b]));
+      for (const [ang, color] of aspects) {
+        const d = Math.abs(diff - ang);
+        if (d > orb) continue;
+        const tt = 1 - d / orb;
+        const involvesHeld = this.held && (a === this.held || b === this.held);
+        if (!involvesHeld && !showWeb) continue;
+        ctx.globalAlpha = involvesHeld ? 0.22 + 0.7 * tt : this.held ? 0.05 + 0.07 * tt : 0.14 + 0.22 * tt;
+        ctx.strokeStyle = color;
+        ctx.lineWidth = involvesHeld ? 0.9 + 2 * tt : this.held ? 0.8 : 1.1;
+        const [x1, y1] = this._xy(lons[a], rAsp), [x2, y2] = this._xy(lons[b], rAsp);
+        ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+        break;
+      }
+    }
+    ctx.globalAlpha = 1;
+
+    // threads from the held hand to the plate — engraved tone, dashed, never confusable with sky-to-sky
+    if (skyOn && this.held && natT.length) {
+      const heldLonN = this.held === 'ASC' ? this.asc : this.pos[this.held];
+      const [hx, hy] = this._xy(heldLonN, rAsp);
+      ctx.setLineDash([2.5, 4]);
+      for (const t of natT) {
+        const diffN = Math.abs(this.wrap(heldLonN - t.lon));
+        for (const [ang] of aspects) {
+          const dN = Math.abs(diffN - ang);
+          if (dN > orb) continue;
+          const tt = 1 - dN / orb;
+          const [nx, ny] = this._xy(t.lon, rN);
+          ctx.strokeStyle = '#b9aee0';
+          ctx.globalAlpha = 0.18 + 0.55 * tt;
+          ctx.lineWidth = 0.6 + 1.1 * tt;
+          ctx.beginPath(); ctx.moveTo(hx, hy); ctx.lineTo(nx, ny); ctx.stroke();
+          ctx.globalAlpha = 0.12 + 0.4 * tt;
+          ctx.beginPath(); ctx.arc(nx, ny, 9.5, 0, 7); ctx.stroke();
+          break;
+        }
+      }
+      ctx.setLineDash([]);
+      ctx.globalAlpha = 1;
+    }
+
+    // –– frozen actor — a seated person/event on the rete: matte stone riding the sky's
+    // track, never light, never moving. threads cross to the plate, dashed. ––
+    if (rete && typeof rete === 'object' && rete.jd && this.eph) {
+      const rc = this._reteChart(rete);
+      if (rc) {
+        const ink = rete.kind === 'person' ? '185,174,224' : '207,201,234';
+        const plate = [];
+        if (this.state.composite && this.comp) { for (const k in this.comp) if (this.comp[k] != null) plate.push({ lon: this.comp[k], rr: k === 'cASC' ? R + 1 : rN }); }
+        else for (const t of natT) plate.push({ lon: t.lon, rr: rN });
+        ctx.setLineDash([2.5, 4]);
+        for (const b of this.BODIES) {
+          const bl = rc.pos[b]; if (bl == null) continue;
+          const [x1, y1] = this._xy(bl, rBody);
+          for (const p of plate) {
+            const diff = Math.abs(this.wrap(bl - p.lon));
+            for (const [ang] of aspects) {
+              const d = Math.abs(diff - ang); if (d > orb) continue;
+              const tt = 1 - d / orb;
+              const [x2, y2] = this._xy(p.lon, p.rr);
+              ctx.strokeStyle = 'rgba(' + ink + ',' + (0.14 + 0.4 * tt) + ')';
+              ctx.lineWidth = 0.6 + 0.9 * tt;
+              ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+              break;
+            }
+          }
+        }
+        ctx.setLineDash([]);
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        for (const b of this.BODIES) {
+          const bl = rc.pos[b]; if (bl == null) continue;
+          const [x, y] = this._xy(bl, rBody);
+          const [t1x, t1y] = this._xy(bl, rSignIn - 5), [t2x, t2y] = this._xy(bl, rSignIn);
+          ctx.strokeStyle = 'rgba(' + ink + ',0.4)'; ctx.lineWidth = 1;
+          ctx.beginPath(); ctx.moveTo(t1x, t1y); ctx.lineTo(t2x, t2y); ctx.stroke();
+          ctx.fillStyle = 'rgba(14,9,36,0.5)';
+          ctx.beginPath(); ctx.arc(x, y, 10.5, 0, 7); ctx.fill();
+          ctx.fillStyle = 'rgba(' + ink + ',0.9)';
+          ctx.font = '17px "Noto Sans Symbols 2","Segoe UI Symbol","Apple Symbols",serif';
+          ctx.fillText(this.GLYPH[b], x, y);
+        }
+        if (rc.asc != null) {
+          const [ax3, ay3] = this._xy(rc.asc, R + 1);
+          ctx.fillStyle = '#140e30';
+          ctx.beginPath(); ctx.arc(ax3, ay3, 10, 0, 7); ctx.fill();
+          ctx.strokeStyle = 'rgba(' + ink + ',0.8)'; ctx.lineWidth = 1;
+          ctx.beginPath(); ctx.arc(ax3, ay3, 10, 0, 7); ctx.stroke();
+          ctx.fillStyle = 'rgba(' + ink + ',0.95)';
+          ctx.font = 'bold 10px "Avenir Next","Century Gothic",sans-serif';
+          ctx.fillText('As', ax3, ay3);
+        }
+      }
+    }
+
+    const ascCol = this._elemOf(this.asc);
+    const [ax1, ay1] = this._xy(this.asc, rAsp), [ax2, ay2] = this._xy(this.asc, R - 10);
+    ctx.strokeStyle = this.held === 'ASC' ? this._hexA(ascCol, 0.95) : this._hexA(ascCol, 0.5);
+    ctx.lineWidth = this.held === 'ASC' ? 2 : 1.3;
+    ctx.beginPath(); ctx.moveTo(ax1, ay1); ctx.lineTo(ax2, ay2); ctx.stroke();
+    const [alx, aly] = this._xy(this.asc, R + 1);
+    ctx.fillStyle = '#140e30';
+    ctx.beginPath(); ctx.arc(alx, aly, 11, 0, 7); ctx.fill();
+    ctx.strokeStyle = this._hexA(ascCol, this.held === 'ASC' ? 0.95 : 0.55); ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.arc(alx, aly, 11, 0, 7); ctx.stroke();
+    ctx.fillStyle = ascCol;
+    ctx.font = 'bold 11px "Avenir Next","Century Gothic",sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('As', alx, aly);
+    this._screen = { ASC: [alx, aly] };
+
+    // O3 — the Descendant: the fourth angle, opposite the As bubble, in the same badge
+    // family at reduced weight (a derived point, not a hand — no bubble, no ring). If DSC
+    // is ever promoted to a first-class toggle it routes through the angle branch instead.
+    if (!act.includes('DSC') && this.asc != null) {
+      const dscLon = this.norm(this.asc + 180);
+      const [dx1, dy1] = this._xy(dscLon, rAsp), [dx2, dy2] = this._xy(dscLon, R - 10);
+      ctx.strokeStyle = this._hexA(ascCol, 0.26); ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(dx1, dy1); ctx.lineTo(dx2, dy2); ctx.stroke();
+      const [dlx, dly] = this._xy(dscLon, R + 1);
+      ctx.fillStyle = this._hexA(ascCol, 0.6);
+      ctx.font = 'bold 8.5px "Avenir Next","Century Gothic",sans-serif';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText('Ds', dlx, dly);
+    }
+
+    const order = act.map((n) => ({ n, lon: this.pos[n], lvl: 0 })).sort((p, q) => p.lon - q.lon);
+    let cluster = [];
+    const clusters = [];
+    for (const o of order) {
+      if (cluster.length && o.lon - cluster[cluster.length - 1].lon < 9) cluster.push(o);
+      else { cluster = [o]; clusters.push(cluster); }
+    }
+    for (const cl of clusters) {
+      [...cl].sort((p, q) => this.PERIODS[p.n] - this.PERIODS[q.n]).forEach((o, i) => { o.lvl = i % 2; });
+    }
+    const drawOrder = [...order].sort((p, q) => this.PERIODS[q.n] - this.PERIODS[p.n]);
+    for (const o of (skyOn ? drawOrder : [])) {
+      // conjunctions stack ALONG the rim (Vertex treatment): depth-of-field, never a drop
+      // onto the plate — the inner radius belongs to the natal/composite chart alone.
+      const r = rBody - o.lvl * 6;
+      const [x, y] = this._xy(o.lon, r);
+      const isHeld = this.held === o.n;
+      const [t1x, t1y] = this._xy(o.lon, rSignIn - 5), [t2x, t2y] = this._xy(o.lon, rSignIn);
+      ctx.strokeStyle = isHeld ? 'rgba(232,171,65,0.95)' : 'rgba(220,214,240,0.5)';
+      ctx.lineWidth = isHeld ? 2 : 1;
+      ctx.beginPath(); ctx.moveTo(t1x, t1y); ctx.lineTo(t2x, t2y); ctx.stroke();
+      if (isHeld) {
+        ctx.strokeStyle = 'rgba(232,171,65,0.8)'; ctx.lineWidth = 1.4;
+        ctx.beginPath(); ctx.arc(x, y, 16, 0, 7); ctx.stroke();
+        ctx.strokeStyle = 'rgba(232,171,65,0.25)';
+        const [dx1, dy1] = this._xy(o.lon, rAsp);
+        ctx.beginPath(); ctx.moveTo(dx1, dy1); ctx.lineTo(x, y); ctx.stroke();
+      }
+      const atRest = !this.held && !this.playing;
+      const elemColor = this._elemOf(o.lon);
+      const deep = o.lvl > 0 && !isHeld;
+      const base = 23 - 1.2 * Math.log10(this.PERIODS[o.n]);
+      // O3 — the angles (MC/IC/Vertex/DSC) leave the symbol-serif path: a quiet ~8.5px
+      // bold-sans badge in the As family, no backing disc, no ring, subordinate alpha.
+      const isAngle = o.n === 'MC' || o.n === 'IC' || o.n === 'Vertex' || o.n === 'DSC';
+      if (isAngle) {
+        const lab = { MC: 'MC', IC: 'IC', Vertex: 'Vx', DSC: 'Ds' }[o.n] || o.n;
+        ctx.globalAlpha = deep ? 0.55 : 0.9;
+        ctx.fillStyle = isHeld ? '#e8ab41' : this._hexA(elemColor, 0.7);
+        ctx.shadowColor = isHeld ? '#e8ab41' : 'transparent';
+        ctx.shadowBlur = isHeld ? 8 : 0;
+        ctx.font = (isHeld ? 'bold 9.5' : 'bold 8.5') + 'px "Avenir Next","Century Gothic",sans-serif';
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText(lab, x, y);
+        ctx.shadowBlur = 0; ctx.globalAlpha = 1;
+        this._screen[o.n] = [x, y];
+        continue;
+      }
+      ctx.fillStyle = deep ? 'rgba(14,9,36,0.55)' : 'rgba(14,9,36,0.35)';
+      ctx.beginPath(); ctx.arc(x, y, deep ? 9 : 11, 0, 7); ctx.fill();
+      if (deep) ctx.globalAlpha = 0.6;
+      ctx.fillStyle = isHeld ? '#e8ab41' : atRest ? elemColor : (o.n === 'Sun' || o.n === 'Moon') ? '#f6f2e4' : '#dcd7f0';
+      ctx.shadowColor = isHeld ? '#e8ab41' : atRest ? elemColor : 'rgba(240,238,252,0.8)';
+      ctx.shadowBlur = isHeld ? 14 : deep ? 3 : 6;
+      ctx.font = (isHeld ? 'bold ' : '') + (isHeld ? base + 2 : deep ? base - 3 : base).toFixed(1) + 'px "Noto Sans Symbols 2","Segoe UI Symbol","Apple Symbols",serif';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      if (o.n === 'Moon') {
+        // the Moon IS a moon — true terminator, lit limb facing the Sun across the wheel.
+        // scrub a week and watch it wax; conjunction goes dark, opposition fills.
+        const mr = isHeld ? 9.5 : deep ? 6.5 : 8;
+        const [sux, suy] = this._xy(this.pos.Sun, rBody);
+        const th = Math.atan2(suy - y, sux - x);
+        this._moonFace(ctx, x, y, mr, this.pos.Sun, this.pos.Moon, {
+          angle: th, lit: isHeld ? '#f0d9a0' : '#f6f2e4', dark: '#221a4a',
+          glow: 'rgba(246,242,228,0.6)', glowBlur: isHeld ? 12 : 5,
+          rimColor: 'rgba(246,242,228,0.35)', rimWidth: 0.8,
+        });
+      } else {
+        ctx.fillText(this.GLYPH[o.n], x, y);
+      }
+      ctx.shadowBlur = 0;
+      ctx.globalAlpha = 1;
+      this._screen[o.n] = [x, y];
+    }
+
+    if (this._pulse && this.held && this._screen[this.held]) {
+      const age = (performance.now() - this._pulse.t0) / 300;
+      if (age < 1) {
+        const k2 = this._pulse.kind;
+        const [px, py] = this._screen[this.held];
+        const rr = 16 + age * (k2 === 'deg' ? 9 : k2 === 'sign' ? 18 : 30);
+        ctx.strokeStyle = k2 === 'aspect' ? '#f2f0fc' : '#e8ab41';
+        ctx.globalAlpha = (1 - age) * (k2 === 'deg' ? 0.3 : k2 === 'sign' ? 0.55 : 0.85);
+        ctx.lineWidth = k2 === 'aspect' ? 2 : 1.3;
+        ctx.beginPath(); ctx.arc(px, py, rr, 0, 7); ctx.stroke();
+        ctx.globalAlpha = 1;
+      } else this._pulse = null;
+    }
+
+    ctx.strokeStyle = 'rgba(190,184,226,0.12)'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.arc(cx, cy, 42, 0, 7); ctx.stroke();
+    if (this.state.settings.showPlayIcon) {
+      ctx.fillStyle = 'rgba(236,232,248,0.32)';
+      if (this.playing) {
+        ctx.fillRect(cx - 8, cy - 9, 5, 18); ctx.fillRect(cx + 3, cy - 9, 5, 18);
+      } else {
+        ctx.beginPath(); ctx.moveTo(cx - 6, cy - 10); ctx.lineTo(cx + 10, cy); ctx.lineTo(cx - 6, cy + 10); ctx.closePath(); ctx.fill();
+      }
+    }
+  }
+
+  _fmtShort(lon) {
+    const s = Math.floor(this.norm(lon) / 30), d = Math.floor(this.norm(lon) % 30);
+    return d + '\u00B0' + this.SIGNS[s] + '\uFE0E';
+  }
+  _fmtLong(lon) {
+    const L = this.norm(lon), s = Math.floor(L / 30), d = Math.floor(L % 30), m = Math.floor((L % 1) * 60);
+    return d + '\u00B0 ' + String(m).padStart(2, '0') + '\u2032 ' + this.SIGN_NAMES[s];
+  }
+  _humanPeriod(d) {
+    if (d < 0.94) return (d * 24).toFixed(1) + ' hours';
+    if (d < 1.5) return '1 day';
+    if (d < 40) return d.toFixed(1) + ' days';
+    if (d < 400) return Math.round(d) + ' days';
+    return (d / 365.25).toFixed(1) + ' years';
+  }
+
+  _readouts() {
+    // S1: the header's own moon-face, kept as a plain sibling canvas (not part of the
+    // skyRef innerHTML rewrite below) so it never gets torn down/orphaned by the three
+    // header text branches \u2014 phase is a sky fact anyway, true regardless of which
+    // chart owns the wheel, so it draws unconditionally from the real Sun/Moon longitudes.
+    if (this.pos && this.moonHeadRef.current) {
+      const mctx = this.moonHeadRef.current.getContext('2d');
+      mctx.clearRect(0, 0, 32, 32);
+      this._moonFace(mctx, 16, 16, 14, this.pos.Sun, this.pos.Moon, { dark: '#140e30', rimColor: 'rgba(220,214,240,0.35)' });
+    }
+    const set = (ref, key, val) => {
+      if (this._lastReadout[key] !== val && ref.current) { ref.current.textContent = val; this._lastReadout[key] = val; }
+    };
+    const setH = (ref, key, val) => {
+      if (this._lastReadout[key] !== val && ref.current) { ref.current.innerHTML = val; this._lastReadout[key] = val; }
+    };
+    const dte = this.eph.jdToDate(this.jd);
+    set(this.civilRef, 'civil',
+      dte.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' }) +
+      ' \u00B7 ' + dte.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit', second: '2-digit' }));
+    const beadKey = this.held && this._heldBeadKey();
+    if (beadKey) {
+      // ♓ held bead — the readout speaks gilt: composite longitude + the half-gear sweep
+      const cLon = this.comp ? (beadKey === 'cASC' ? this.comp.cASC : this.comp[beadKey]) : null;
+      if (cLon != null) {
+        setH(this.skyRef, 'sky', '<span style="color:#e8ab41">' + (beadKey === 'cASC' ? 'As' : this.GLYPH[beadKey]) + ' ' + this._fmtLong(cLon) + '</span>');
+        const nm = beadKey === 'cASC' ? 'ASCENDANT' : (this.LABEL[beadKey] || beadKey).toUpperCase();
+        const per = this.PERIODS[beadKey === 'cASC' ? 'ASC' : beadKey] * 2 * (this._gearMult || 1);
+        set(this.gearRef, 'gear', 'COMPOSITE ' + nm + ' \u00B7 1 SWEEP = ' + this._humanPeriod(per));
+        return;
+      }
+    }
+    if (this.held) {
+      const isAsc = this.held === 'ASC';
+      const lon = isAsc ? this.asc : this.pos[this.held];
+      let rx = '';
+      if (!isAsc && !this.NO_RX.includes(this.held)) {
+        const ahead = this._posAt(this.jd + 0.2)[this.held];
+        if (this.wrap(ahead - lon) < 0) rx = ' \u211E';
+      }
+      setH(this.skyRef, 'sky', (isAsc ? '<span style="color:' + this._elemOf(this.asc) + '">As</span>' : this.GLYPH[this.held]) + ' ' + this._fmtLong(lon) + rx);
+      const asp = this._aspectStatus();
+      const label = isAsc ? 'HORIZON' : (this.LABEL[this.held] || this.held).toUpperCase();
+      set(this.gearRef, 'gear', asp ? label + ' ' + asp : label + ' HAND \u00B7 1 SWEEP = ' + this._humanPeriod(this.PERIODS[this.held] * (this._gearMult || 1)));
+    } else {
+      // –– HEADER-COLOR RULE (the Derivation Law, documented as part of the O-block) ––
+      // The big-three readout is the depth-0 report of whichever chart OWNS THE WHEEL:
+      //   · sky owns it (default/live, or a frozen person/event whose sky we ease to)
+      //     → each of ☉/☽/As wears its element color — the sky-state language.
+      //   · a depth-3 entity owns it (solo composite: rete off + composite on)
+      //     → the readout golds, because the wheel is re-seated to the lived "you × now"
+      //       chart. This is the ONLY sanctioned override of the element-color language.
+      // A held hand or bead colors by what's held (handled in the branches above).
+      const sep = '<span style="color:#5a5090">  \u00B7  </span>';
+      const rr = this.state.rete;
+      if (rr === 'off' && this.state.composite && this.comp) {
+        // solo composite — the header speaks gilt: your lived Sun · Moon · As
+        setH(this.skyRef, 'sky',
+          '<span style="color:#e8ab41">\u2609 ' + this._fmtShort(this.comp.Sun) + '</span>' + sep +
+          '<span style="color:#e8ab41">\u263D ' + this._fmtShort(this.comp.Moon) + '</span>' + sep +
+          '<span style="color:#e8ab41">As ' + this._fmtShort(this.comp.cASC) + '</span>');
+      } else {
+        setH(this.skyRef, 'sky',
+          '<span style="color:' + this._elemOf(this.pos.Sun) + '">\u2609 ' + this._fmtShort(this.pos.Sun) + '</span>' + sep +
+          '<span style="color:' + this._elemOf(this.pos.Moon) + '">\u263D ' + this._fmtShort(this.pos.Moon) + '</span>' + sep +
+          '<span style="color:' + this._elemOf(this.asc) + '">As ' + this._fmtShort(this.asc) + '</span>');
+      }
+      const v = this.state.settings.playSpeed;
+      set(this.gearRef, 'gear', this.playing ? 'PLAYING \u00B7 ' + v + (this.frame === 'horizon' ? ' MIN / SEC' : ' H / SEC') : this.live ? '\u25CF LIVE' : this._reteFrozen() ? ((this.state.rete.name || '') + ' \u00B7 FROZEN').toUpperCase() : '\u00A0');
+    }
+  }
+}
+</script>
+</body>
+</html>

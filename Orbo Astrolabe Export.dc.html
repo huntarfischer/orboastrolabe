@@ -1,0 +1,1274 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+<meta name="ext-resource-dependency" content="./ephem.js" data-resource-id="ephem" />
+<meta name="ext-resource-dependency" content="./cities.js" data-resource-id="cities" />
+<template id="__bundler_thumbnail" data-bg-color="#0b081c">
+  <svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#131a3e"/>
+        <stop offset="0.5" stop-color="#26496e"/>
+        <stop offset="0.8" stop-color="#94522b"/>
+        <stop offset="1" stop-color="#632a2a"/>
+      </linearGradient>
+    </defs>
+    <rect width="120" height="120" fill="url(#sky)"/>
+    <circle cx="60" cy="60" r="34" fill="#181143" stroke="#beb8e2" stroke-opacity="0.5" stroke-width="1.5"/>
+    <circle cx="60" cy="60" r="26" fill="none" stroke="#beb8e2" stroke-opacity="0.3" stroke-width="1"/>
+    <line x1="26" y1="60" x2="60" y2="60" stroke="#4da4d9" stroke-width="1.6"/>
+    <circle cx="48" cy="46" r="4.5" fill="#e8ab41"/>
+    <circle cx="74" cy="68" r="3" fill="#c9d4f2"/>
+  </svg>
+</template>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+  html, body { margin: 0; padding: 0; background: #0b081c; }
+  a { color: #4da4d9; text-decoration: none; }
+  a:hover { color: #7cc0e8; }
+  input { color-scheme: dark; }
+  input::placeholder { color: #5a5090; }
+  input[type="range"] { accent-color: #e8ab41; }
+</style>
+</helmet>
+<div style="min-height:100vh;background:#0b081c;display:flex;justify-content:center;font-family:'Avenir Next','Century Gothic',Futura,'Trebuchet MS',sans-serif;color:#dcd7f0;">
+  <div style="width:100%;max-width:430px;min-height:100vh;display:flex;flex-direction:column;position:relative;overflow:hidden;box-shadow:0 0 90px rgba(0,0,0,0.85);background-color:#0c081f;background-image:linear-gradient(180deg, #0c081f 0%, #131a3e 24%, #26496e 46%, #7e5f2e 68%, #94522b 82%, #7c3a2f 94%, #632a2a 100%);background-repeat:no-repeat;background-size:100% 100%;">
+    <div style="position:absolute;inset:0;pointer-events:none;background-image:radial-gradient(1.6px 1.6px at 31px 27px, rgba(246,244,255,0.95), transparent 60%),radial-gradient(1px 1px at 118px 63px, rgba(236,232,248,0.7), transparent 60%),radial-gradient(1.3px 1.3px at 74px 141px, rgba(196,208,248,0.8), transparent 60%),radial-gradient(0.9px 0.9px at 163px 108px, rgba(236,232,248,0.55), transparent 60%),radial-gradient(1.1px 1.1px at 22px 189px, rgba(255,240,220,0.6), transparent 60%),radial-gradient(0.8px 0.8px at 201px 161px, rgba(236,232,248,0.5), transparent 60%),radial-gradient(1.4px 1.4px at 147px 217px, rgba(214,224,255,0.75), transparent 60%),radial-gradient(0.9px 0.9px at 55px 88px, rgba(236,232,248,0.6), transparent 60%);background-size:231px 231px,199px 199px,253px 253px,181px 181px,269px 269px,211px 211px,241px 241px,223px 223px;mask-image:linear-gradient(180deg, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.85) 34%, rgba(0,0,0,0.4) 52%, transparent 72%);-webkit-mask-image:linear-gradient(180deg, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.85) 34%, rgba(0,0,0,0.4) 52%, transparent 72%);"></div>
+
+    <div style="padding:20px 22px 8px 22px;display:flex;flex-direction:column;gap:7px;position:relative;">
+      <div style="display:flex;align-items:baseline;justify-content:space-between;">
+        <div style="font-size:11px;letter-spacing:0.24em;text-transform:uppercase;color:#8f86c0;">Orbo Astrolabe</div>
+        <div style="font-size:10px;letter-spacing:0.2em;text-transform:uppercase;color:#5a5090;">prototype</div>
+      </div>
+      <div ref="{{ skyRef }}" style="font-size:22px;line-height:1.25;color:#f2f0fc;min-height:28px;letter-spacing:0.02em;text-align:center;">&#8230;</div>
+      <div ref="{{ civilRef }}" onDoubleClick="{{ goNow }}" style="font-size:12px;color:#a99ecf;min-height:14px;font-variant-numeric:tabular-nums;white-space:nowrap;text-align:center;cursor:pointer;">&nbsp;</div>
+      <div ref="{{ gearRef }}" style="font-size:10.5px;letter-spacing:0.16em;text-transform:uppercase;color:#e8ab41;min-height:14px;white-space:nowrap;text-align:center;">&nbsp;</div>
+    </div>
+
+    <div style="position:relative;width:100%;perspective:1400px;">
+      <div style="position:relative;width:100%;transform-style:preserve-3d;transition:transform 0.7s cubic-bezier(0.4,0.1,0.2,1);transform:{{ flipTf }};">
+        <canvas ref="{{ canvasRef }}" style="display:block;width:100%;touch-action:none;cursor:crosshair;backface-visibility:hidden;-webkit-backface-visibility:hidden;pointer-events:{{ frontPe }};"></canvas>
+
+        <div style="position:absolute;inset:15px;border-radius:50%;transform:rotateY(180deg);backface-visibility:hidden;-webkit-backface-visibility:hidden;pointer-events:{{ backPe }};background:radial-gradient(closest-side, #1a1348 0%, #181143 62%, #100b30 100%);border:1.3px solid rgba(190,184,226,0.3);box-shadow:0 8px 22px rgba(0,0,0,0.6);overflow:hidden;">
+          <svg viewBox="0 0 100 100" style="position:absolute;inset:0;width:100%;height:100%;">
+            <circle cx="50" cy="50" r="49.3" fill="none" stroke="rgba(190,184,226,0.2)" stroke-width="0.35"></circle>
+            <circle cx="50" cy="50" r="38" fill="none" stroke="rgba(190,184,226,0.16)" stroke-width="0.3"></circle>
+            <sc-for list="{{ segs }}" as="sg">
+              <path d="{{ sg.d }}" fill="{{ sg.fill }}" stroke="rgba(190,184,226,0.14)" stroke-width="0.25" onClick="{{ sg.tap }}" style="cursor:pointer;"></path>
+            </sc-for>
+            <sc-for list="{{ segDots }}" as="sd2">
+              <circle cx="{{ sd2.x }}" cy="{{ sd2.y }}" r="0.7" fill="#e8ab41"></circle>
+            </sc-for>
+          </svg>
+          <sc-for list="{{ segs }}" as="sg">
+            <div style="position:absolute;left:{{ sg.gl }};top:{{ sg.gt }};transform:translate(-50%,-50%);pointer-events:none;font-size:19px;line-height:1;color:{{ sg.col }};font-family:'Noto Sans Symbols 2','Segoe UI Symbol','Apple Symbols',serif;">{{ sg.glyph }}</div>
+          </sc-for>
+
+          <div style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:52%;height:58%;display:flex;flex-direction:column;">
+            <datalist id="orbo-cities">
+              <sc-for list="{{ cityOpts }}" as="cn" hint-placeholder-count="0">
+                <option value="{{ cn }}"></option>
+              </sc-for>
+            </datalist>
+
+            <sc-if value="{{ pLegend }}" hint-placeholder-val="{{ true }}">
+              <div style="text-align:center;font-size:9px;letter-spacing:0.22em;text-transform:uppercase;color:#8f86c0;margin-bottom:8px;">The back &#8212; you</div>
+              <div style="flex:1;overflow-y:auto;display:flex;flex-direction:column;">
+                <sc-for list="{{ legend }}" as="lg">
+                  <div onClick="{{ lg.tap }}" style="display:flex;align-items:center;gap:8px;padding:3.5px 2px;cursor:pointer;opacity:{{ lg.op }};">
+                    <div style="font-size:12px;color:#a89ecf;width:16px;text-align:center;">{{ lg.glyph }}</div>
+                    <div style="font-size:11px;color:#dcd7f0;">{{ lg.name }}</div>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ pNatal }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:8px;">
+                <div style="font-size:9px;letter-spacing:0.2em;text-transform:uppercase;color:#e8ab41;">&#9800;&#65038; Natal chart</div>
+                <div onClick="{{ closePanel }}" style="font-size:12px;color:#5a5090;cursor:pointer;padding:0 2px;">&#215;</div>
+              </div>
+              <div style="flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:7px;">
+                <input type="date" value="{{ natalDate }}" onChange="{{ onNatalDate }}" style="width:100%;box-sizing:border-box;background:rgba(0,0,0,0.28);border:1px solid rgba(190,184,226,0.22);border-radius:8px;padding:7px 8px;color:#ece8f8;font-size:11.5px;outline:none;font-family:inherit;">
+                <input type="time" value="{{ natalTime }}" onChange="{{ onNatalTime }}" style="width:100%;box-sizing:border-box;background:rgba(0,0,0,0.28);border:1px solid rgba(190,184,226,0.22);border-radius:8px;padding:7px 8px;color:#ece8f8;font-size:11.5px;outline:none;font-family:inherit;">
+                <input type="text" list="orbo-cities" placeholder="birthplace &#8212; type a city" value="{{ natalPlace }}" onChange="{{ onNatalPlace }}" style="width:100%;box-sizing:border-box;background:rgba(0,0,0,0.28);border:1px solid rgba(190,184,226,0.22);border-radius:8px;padding:7px 8px;color:#ece8f8;font-size:11.5px;outline:none;font-family:inherit;">
+                <div style="font-size:9.5px;color:{{ natalCityCol }};line-height:1.4;">{{ natalCityNote }}</div>
+                <div onClick="{{ toggleNatalRing }}" style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:4px 0;cursor:pointer;">
+                  <div style="font-size:11px;color:#dcd7f0;">natal ring on the wheel</div>
+                  <div style="width:28px;height:17px;border-radius:9px;background:{{ natalBg }};position:relative;transition:background 0.2s;flex-shrink:0;">
+                    <div style="position:absolute;top:2px;left:{{ natalKnob }};width:13px;height:13px;border-radius:50%;background:#f2f0fc;transition:left 0.2s;"></div>
+                  </div>
+                </div>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ pLoc }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:8px;">
+                <div style="font-size:9px;letter-spacing:0.2em;text-transform:uppercase;color:#e8ab41;">&#9801;&#65038; Here &amp; now</div>
+                <div onClick="{{ closePanel }}" style="font-size:12px;color:#5a5090;cursor:pointer;padding:0 2px;">&#215;</div>
+              </div>
+              <div style="flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:8px;">
+                <div style="font-size:11px;color:#a89ecf;font-variant-numeric:tabular-nums;">{{ locStr }}</div>
+                <div onClick="{{ useMyLocation }}" style="font-size:9px;letter-spacing:0.14em;text-transform:uppercase;color:#4da4d9;cursor:pointer;border:1px solid rgba(77,164,217,0.4);border-radius:999px;padding:6px 10px;align-self:flex-start;">use my location</div>
+                <input type="text" list="orbo-cities" placeholder="or type a city" value="{{ locPlace }}" onChange="{{ onLocPlace }}" style="width:100%;box-sizing:border-box;background:rgba(0,0,0,0.28);border:1px solid rgba(190,184,226,0.22);border-radius:8px;padding:7px 8px;color:#ece8f8;font-size:11.5px;outline:none;font-family:inherit;">
+                <div style="font-size:9.5px;color:#5a5090;line-height:1.5;">{{ locNote }}</div>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ pPlanets }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:8px;">
+                <div style="font-size:9px;letter-spacing:0.2em;text-transform:uppercase;color:#e8ab41;">&#9802;&#65038; Planets</div>
+                <div onClick="{{ closePanel }}" style="font-size:12px;color:#5a5090;cursor:pointer;padding:0 2px;">&#215;</div>
+              </div>
+              <div style="flex:1;overflow-y:auto;">
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+                  <sc-for list="{{ planetChips }}" as="ch">
+                    <div onClick="{{ ch.tap }}" style="display:flex;align-items:center;gap:7px;padding:7px 8px;border-radius:8px;border:1px solid {{ ch.bd }};cursor:pointer;background:rgba(0,0,0,0.2);">
+                      <div style="font-size:14px;color:{{ ch.col }};">{{ ch.glyph }}</div>
+                      <div style="font-size:9.5px;color:{{ ch.txt }};">{{ ch.name }}</div>
+                    </div>
+                  </sc-for>
+                </div>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ pObjects }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:8px;">
+                <div style="font-size:9px;letter-spacing:0.2em;text-transform:uppercase;color:#e8ab41;">&#9807;&#65038; Objects</div>
+                <div onClick="{{ closePanel }}" style="font-size:12px;color:#5a5090;cursor:pointer;padding:0 2px;">&#215;</div>
+              </div>
+              <div style="flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:6px;">
+                <sc-for list="{{ objectChips }}" as="ch">
+                  <div onClick="{{ ch.tap }}" style="display:flex;align-items:center;gap:8px;padding:8px 9px;border-radius:8px;border:1px solid {{ ch.bd }};cursor:pointer;background:rgba(0,0,0,0.2);">
+                    <div style="font-size:14px;color:{{ ch.col }};width:30px;">{{ ch.glyph }}</div>
+                    <div style="font-size:10px;color:{{ ch.txt }};">{{ ch.name }}</div>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ pAspects }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:8px;">
+                <div style="font-size:9px;letter-spacing:0.2em;text-transform:uppercase;color:#e8ab41;">&#9805;&#65038; Aspects</div>
+                <div onClick="{{ closePanel }}" style="font-size:12px;color:#5a5090;cursor:pointer;padding:0 2px;">&#215;</div>
+              </div>
+              <div style="flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:9px;">
+                <div style="display:flex;gap:5px;justify-content:space-between;">
+                  <sc-for list="{{ aspectChips }}" as="ch">
+                    <div onClick="{{ ch.tap }}" style="flex:1;text-align:center;padding:7px 0;border-radius:8px;border:1px solid {{ ch.bd }};cursor:pointer;background:rgba(0,0,0,0.2);font-size:13px;color:{{ ch.col }};">{{ ch.glyph }}</div>
+                  </sc-for>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:3px;">
+                  <div style="display:flex;justify-content:space-between;font-size:9.5px;color:#a89ecf;"><span>orb</span><span>{{ orbVal }}&#176;</span></div>
+                  <input type="range" min="1" max="8" step="0.5" value="{{ orbVal }}" onChange="{{ onOrb }}" style="width:100%;margin:0;">
+                </div>
+                <div onClick="{{ toggleWeb }}" style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:2px 0;cursor:pointer;">
+                  <div style="font-size:11px;color:#dcd7f0;">aspect web at rest</div>
+                  <div style="width:28px;height:17px;border-radius:9px;background:{{ webBg }};position:relative;transition:background 0.2s;flex-shrink:0;">
+                    <div style="position:absolute;top:2px;left:{{ webKnob }};width:13px;height:13px;border-radius:50%;background:#f2f0fc;transition:left 0.2s;"></div>
+                  </div>
+                </div>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ pTransport }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:8px;">
+                <div style="font-size:9px;letter-spacing:0.2em;text-transform:uppercase;color:#e8ab41;">&#9809;&#65038; Transport</div>
+                <div onClick="{{ closePanel }}" style="font-size:12px;color:#5a5090;cursor:pointer;padding:0 2px;">&#215;</div>
+              </div>
+              <div style="flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:8px;">
+                <div style="display:flex;flex-direction:column;gap:3px;">
+                  <div style="display:flex;justify-content:space-between;font-size:9.5px;color:#a89ecf;"><span>play speed</span><span>{{ speedVal }} {{ speedUnit }}</span></div>
+                  <input type="range" min="1" max="48" step="1" value="{{ speedVal }}" onChange="{{ onSpeed }}" style="width:100%;margin:0;">
+                </div>
+                <div style="display:flex;flex-direction:column;gap:3px;">
+                  <div style="display:flex;justify-content:space-between;font-size:9.5px;color:#a89ecf;"><span>rim gearing</span><span>{{ gearVal }}</span></div>
+                  <input type="range" min="0" max="3" step="0.25" value="{{ gearVal }}" onChange="{{ onGear }}" style="width:100%;margin:0;">
+                </div>
+                <div style="display:flex;flex-direction:column;gap:3px;">
+                  <div style="display:flex;justify-content:space-between;font-size:9.5px;color:#a89ecf;"><span>snap magnetism</span><span>{{ magVal }}</span></div>
+                  <input type="range" min="0" max="1" step="0.05" value="{{ magVal }}" onChange="{{ onMag }}" style="width:100%;margin:0;">
+                </div>
+                <div onClick="{{ toggleHaptics }}" style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:2px 0;cursor:pointer;">
+                  <div style="font-size:11px;color:#dcd7f0;">haptics</div>
+                  <div style="width:28px;height:17px;border-radius:9px;background:{{ hapBg }};position:relative;transition:background 0.2s;flex-shrink:0;">
+                    <div style="position:absolute;top:2px;left:{{ hapKnob }};width:13px;height:13px;border-radius:50%;background:#f2f0fc;transition:left 0.2s;"></div>
+                  </div>
+                </div>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ pPeople }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:8px;">
+                <div style="font-size:9px;letter-spacing:0.2em;text-transform:uppercase;color:#e8ab41;">&#9806;&#65038; People</div>
+                <div onClick="{{ closePanel }}" style="font-size:12px;color:#5a5090;cursor:pointer;padding:0 2px;">&#215;</div>
+              </div>
+              <div style="flex:1;overflow-y:auto;display:flex;flex-direction:column;">
+                <sc-for list="{{ people }}" as="ev" hint-placeholder-count="0">
+                  <div onClick="{{ ev.go }}" style="display:flex;align-items:center;justify-content:space-between;gap:6px;padding:7px 0;border-bottom:1px solid rgba(190,184,226,0.1);cursor:pointer;">
+                    <div style="min-width:0;">
+                      <div style="font-size:11px;color:#dcd7f0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ ev.name }}</div>
+                      <div style="font-size:8.5px;color:#857cb5;font-variant-numeric:tabular-nums;">{{ ev.whenStr }}</div>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:7px;flex-shrink:0;">
+                      <div onClick="{{ ev.cal }}" title="add to calendar" style="font-size:12px;color:#e8ab41;padding:0 2px;">&#65291;</div>
+                      <div onClick="{{ ev.del }}" style="font-size:11px;color:#5a5090;padding:0 2px;">&#215;</div>
+                    </div>
+                  </div>
+                </sc-for>
+                <sc-if value="{{ noPeople }}" hint-placeholder-val="{{ false }}">
+                  <div style="font-size:9.5px;color:#5a5090;line-height:1.5;padding-top:4px;">no one yet &#8212; on the front, hold the center and mark the moment as a person</div>
+                </sc-if>
+              </div>
+            </sc-if>
+
+            <sc-if value="{{ pEvents }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:8px;">
+                <div style="font-size:9px;letter-spacing:0.2em;text-transform:uppercase;color:#e8ab41;">&#9810;&#65038; Events &amp; horary</div>
+                <div onClick="{{ closePanel }}" style="font-size:12px;color:#5a5090;cursor:pointer;padding:0 2px;">&#215;</div>
+              </div>
+              <div style="flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:6px;">
+                <div style="display:flex;flex-direction:column;">
+                  <sc-for list="{{ eventItems }}" as="ev" hint-placeholder-count="0">
+                    <div onClick="{{ ev.go }}" style="display:flex;align-items:center;justify-content:space-between;gap:6px;padding:7px 0;border-bottom:1px solid rgba(190,184,226,0.1);cursor:pointer;">
+                      <div style="min-width:0;">
+                        <div style="font-size:11px;color:#dcd7f0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ ev.badge }}{{ ev.name }}</div>
+                        <div style="font-size:8.5px;color:#857cb5;font-variant-numeric:tabular-nums;">{{ ev.whenStr }}</div>
+                      </div>
+                      <div style="display:flex;align-items:center;gap:7px;flex-shrink:0;">
+                        <div onClick="{{ ev.cal }}" title="add to calendar" style="font-size:12px;color:#e8ab41;padding:0 2px;">&#65291;</div>
+                        <div onClick="{{ ev.del }}" style="font-size:11px;color:#5a5090;padding:0 2px;">&#215;</div>
+                      </div>
+                    </div>
+                  </sc-for>
+                  <sc-if value="{{ noEvents }}" hint-placeholder-val="{{ false }}">
+                    <div style="font-size:9.5px;color:#5a5090;line-height:1.5;padding-top:4px;">nothing marked yet &#8212; hold the center on the front, or add one here</div>
+                  </sc-if>
+                </div>
+                <input type="text" placeholder="event name" value="{{ evName }}" onChange="{{ onEvName }}" style="width:100%;box-sizing:border-box;background:rgba(0,0,0,0.28);border:1px solid rgba(190,184,226,0.22);border-radius:8px;padding:6px 8px;color:#ece8f8;font-size:11px;outline:none;font-family:inherit;">
+                <div style="display:grid;grid-template-columns:1fr auto;gap:5px;">
+                  <input type="datetime-local" value="{{ evWhen }}" onChange="{{ onEvWhen }}" style="width:100%;box-sizing:border-box;background:rgba(0,0,0,0.28);border:1px solid rgba(190,184,226,0.22);border-radius:8px;padding:6px 6px;color:#ece8f8;font-size:9.5px;outline:none;font-family:inherit;">
+                  <div onClick="{{ addEvent }}" style="font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:#e8ab41;border:1px solid rgba(232,171,65,0.45);border-radius:8px;padding:6px 8px;cursor:pointer;display:flex;align-items:center;">add</div>
+                </div>
+              </div>
+            </sc-if>
+
+            <div style="text-align:center;padding-top:8px;">
+              <div onClick="{{ flipBack }}" style="display:inline-block;font-size:9px;letter-spacing:0.18em;text-transform:uppercase;color:#e8ab41;cursor:pointer;padding:4px 10px;">&#10226; front</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top:auto;display:flex;justify-content:center;padding:16px 0 22px 0;position:relative;">
+      <div onClick="{{ openHelp }}" style="width:26px;height:26px;border-radius:50%;border:1px solid rgba(246,228,201,0.4);color:rgba(246,228,201,0.85);display:flex;align-items:center;justify-content:center;font-size:13px;font-style:italic;font-family:Georgia,serif;cursor:pointer;text-shadow:0 1px 4px rgba(40,16,10,0.5);">i</div>
+    </div>
+
+    <sc-if value="{{ saveOpen }}" hint-placeholder-val="{{ false }}">
+      <div onClick="{{ closeSave }}" style="position:absolute;inset:0;z-index:8;background:rgba(8,5,20,0.7);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;">
+        <div onClick="{{ eatTap }}" style="width:76%;background:radial-gradient(closest-side, #171040, #0b0722);border:1px solid rgba(190,184,226,0.3);border-radius:18px;padding:20px;display:flex;flex-direction:column;gap:12px;box-shadow:0 0 50px 6px rgba(232,171,65,0.18);">
+          <div style="font-size:10px;letter-spacing:0.22em;text-transform:uppercase;color:#8f86c0;text-align:center;">Mark this moment</div>
+          <div style="font-size:11.5px;color:#a89ecf;text-align:center;font-variant-numeric:tabular-nums;">{{ saveWhen }}</div>
+          <input type="text" placeholder="name it" value="{{ saveName }}" onChange="{{ onSaveName }}" style="width:100%;box-sizing:border-box;background:rgba(0,0,0,0.28);border:1px solid rgba(190,184,226,0.22);border-radius:9px;padding:9px 10px;color:#ece8f8;font-size:13px;outline:none;font-family:inherit;text-align:center;">
+          <div style="display:flex;gap:6px;">
+            <sc-for list="{{ kindChips }}" as="kc">
+              <div onClick="{{ kc.tap }}" style="flex:1;text-align:center;padding:8px 0;border-radius:9px;border:1px solid {{ kc.bd }};cursor:pointer;font-size:9.5px;letter-spacing:0.12em;text-transform:uppercase;color:{{ kc.col }};background:rgba(0,0,0,0.2);">{{ kc.name }}</div>
+            </sc-for>
+          </div>
+          <div style="display:flex;gap:8px;">
+            <div onClick="{{ doSave }}" style="flex:1;text-align:center;padding:10px 0;border-radius:9px;border:1px solid rgba(232,171,65,0.5);color:#e8ab41;font-size:10px;letter-spacing:0.14em;text-transform:uppercase;cursor:pointer;">mark</div>
+            <div onClick="{{ doSaveCal }}" style="flex:1.4;text-align:center;padding:10px 0;border-radius:9px;border:1px solid rgba(232,171,65,0.5);background:rgba(232,171,65,0.14);color:#f0c26a;font-size:10px;letter-spacing:0.14em;text-transform:uppercase;cursor:pointer;">mark + calendar</div>
+          </div>
+          <div style="text-align:center;font-size:9px;letter-spacing:0.16em;text-transform:uppercase;color:#5a5090;">tap outside to cancel</div>
+        </div>
+      </div>
+    </sc-if>
+
+    <div onClick="{{ closeSheet }}" style="position:absolute;left:50%;bottom:-470px;width:820px;height:820px;margin-left:-410px;z-index:6;transform:{{ sheetTf }};transition:transform 0.42s cubic-bezier(0.3,1,0.4,1);border-radius:50%;background:radial-gradient(closest-side, #0b0722 66%, #171040 100%);border:1px solid rgba(190,184,226,0.25);box-shadow:0 0 70px 10px rgba(232,171,65,0.22), 0 -10px 40px rgba(0,0,0,0.6);cursor:pointer;">
+      <div style="width:330px;margin:0 auto;padding-top:44px;">
+        <div style="width:36px;height:4px;border-radius:2px;background:rgba(190,184,226,0.3);margin:0 auto 14px auto;"></div>
+        <sc-if value="{{ sheetHasData }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;align-items:center;gap:14px;margin-bottom:6px;">
+            <div style="font-size:32px;line-height:1;color:{{ sheetColor }};text-shadow:0 0 14px {{ sheetColor }};">{{ sheetGlyph }}</div>
+            <div style="display:flex;flex-direction:column;gap:3px;">
+              <div style="font-size:17px;color:#f2f0fc;letter-spacing:0.04em;">{{ sheetName }}{{ sheetRx }}</div>
+              <div style="font-size:12px;color:#857cb5;">{{ sheetPos }}</div>
+            </div>
+          </div>
+          <div style="max-height:150px;overflow:auto;">
+            <sc-for list="{{ sheetAspects }}" as="a" hint-placeholder-count="0">
+              <div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;padding:9px 0;border-bottom:1px solid rgba(190,184,226,0.08);">
+                <div style="font-size:14px;color:#dcd7f0;">{{ a.label }}</div>
+                <div style="font-size:10.5px;letter-spacing:0.14em;text-transform:uppercase;color:{{ a.phaseColor }};">{{ a.orbStr }} {{ a.phase }}</div>
+              </div>
+            </sc-for>
+          </div>
+          <sc-if value="{{ sheetEmpty }}" hint-placeholder-val="{{ false }}">
+            <div style="padding:9px 0;font-size:12px;color:#6f66a3;">no aspects in orb</div>
+          </sc-if>
+          <div style="margin-top:12px;text-align:center;font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:#5a5090;">tap to dismiss</div>
+        </sc-if>
+      </div>
+    </div>
+
+    <sc-if value="{{ helpOpen }}" hint-placeholder-val="{{ false }}">
+      <div onClick="{{ closeHelp }}" style="position:absolute;inset:0;z-index:9;background:rgba(8,5,20,0.82);backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px);display:flex;align-items:center;justify-content:center;cursor:pointer;">
+        <div style="width:80%;display:flex;flex-direction:column;gap:15px;text-align:center;">
+          <div style="font-size:10px;letter-spacing:0.24em;text-transform:uppercase;color:#8f86c0;margin-bottom:4px;">how to play</div>
+          <div style="font-size:13px;line-height:1.55;color:#dcd7f0;">grab a body &#8212; its orbit becomes your scrub rate</div>
+          <div style="font-size:13px;line-height:1.55;color:#dcd7f0;">hands click onto exact aspects &#183; hold a planet for its reading</div>
+          <div style="font-size:13px;line-height:1.55;color:#dcd7f0;">tap the center to play &#183; hold the center to mark the moment</div>
+          <div style="font-size:13px;line-height:1.55;color:#dcd7f0;">double-tap the rim to flip &#8212; the back is you</div>
+          <div style="font-size:13px;line-height:1.55;color:#dcd7f0;">double-tap As to pin the horizon &#8212; pinned, play runs in minutes, not hours</div>
+          <div style="font-size:13px;line-height:1.55;color:#dcd7f0;">double-tap the clock to come home</div>
+          <div style="font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:#5a5090;margin-top:6px;">tap anywhere to close</div>
+        </div>
+      </div>
+    </sc-if>
+
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:430,&quot;height&quot;:800}}">
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.canvasRef = React.createRef();
+    this.skyRef = React.createRef();
+    this.gearRef = React.createRef();
+    this.civilRef = React.createRef();
+    this.jd = Date.now() / 86400000 + 2440587.5;
+    this.playing = false;
+    this.held = null;
+    this.frame = 'sky'; // 'sky' = zodiac fixed, ASC sweeps \u00B7 'horizon' = ASC pinned at 9 o'clock, sky rotates
+    this._rot = 0;
+    this.BODIES = ['Sun','Moon','Mercury','Venus','Mars','Jupiter','Saturn','Uranus','Neptune','Pluto'];
+    this.PERIODS = { ASC: 0.99727, Moon: 27.32166, Mercury: 87.9691, Venus: 224.701, Sun: 365.2564, Mars: 686.98, Jupiter: 4332.59, Saturn: 10759.22, Uranus: 30688.5, Neptune: 60182, Pluto: 90560, Node: 6798.38, SNode: 6798.38, Lilith: 3232.6, Chiron: 18513 };
+    this.GLYPH = { Sun: '\u2609', Moon: '\u263D', Mercury: '\u263F', Venus: '\u2640', Mars: '\u2642', Jupiter: '\u2643', Saturn: '\u2644', Uranus: '\u2645', Neptune: '\u2646', Pluto: '\u2647', Node: '\u260A', SNode: '\u260B', Lilith: '\u26B8', Chiron: '\u26B7' };
+    this.LABEL = { Node: 'North Node', SNode: 'South Node', Lilith: 'Lilith', Chiron: 'Chiron' };
+    this.NO_RX = ['Sun','Moon','Node','SNode','Lilith'];
+    this.SIGNS = ['\u2648','\u2649','\u264A','\u264B','\u264C','\u264D','\u264E','\u264F','\u2650','\u2651','\u2652','\u2653'];
+    this.SIGN_NAMES = ['Aries','Taurus','Gemini','Cancer','Leo','Virgo','Libra','Scorpio','Sagittarius','Capricorn','Aquarius','Pisces'];
+    this.ELEM = ['#d64541', '#d97036', '#e8ab41', '#4da4d9']; // fire / earth / air / water — the one color language
+    this.ELEM_NAME = ['fire', 'earth', 'air', 'water'];
+    this.ASPECTS = [[0, '#ece8f8'], [60, '#4da4d9'], [90, '#d64541'], [120, '#4da4d9'], [180, '#d64541']];
+    this.ASYM = { 0: '\u260C', 60: '\u26B9', 90: '\u25A1', 120: '\u25B3', 180: '\u260D' };
+    this.JD_MIN = 2378497; this.JD_MAX = 2469807;
+    this._screen = {}; this._lastReadout = {};
+    // the back: twelve rim slots in zodiacal order from 9 o'clock
+    this.SECTIONS = [
+      { id: 'natal', name: 'Natal chart' }, { id: 'loc', name: 'Here & now' }, { id: 'planets', name: 'Planets' },
+      { id: null, name: 'Moon' }, { id: null, name: 'Appearance' }, { id: 'aspects', name: 'Aspects' },
+      { id: 'people', name: 'People' }, { id: 'objects', name: 'Objects' }, { id: null, name: 'Lenses' },
+      { id: 'transport', name: 'Transport' }, { id: 'events', name: 'Events' }, { id: null, name: '' },
+    ];
+    this.DEFAULTS = { orb: 6, showWeb: true, playSpeed: 6, rimGear: 2.75, snapMagnet: 0.7, haptics: true };
+    let saved = {};
+    try { saved = JSON.parse(localStorage.getItem('orbo.astrolabe.back')) || {}; } catch (e) {}
+    // migrate old plain events list into the saved-charts model
+    let charts = saved.saved || (saved.events || []).map((ev) => ({ name: ev.name, kind: 'event', jd: ev.jd, whenStr: ev.whenStr }));
+    const loc = saved.loc || {};
+    this.lat = loc.lat ?? 43.334; this.lng = loc.lng ?? -90.386; // Richland Center fallback
+    this.state = {
+      sheet: null, sheetData: null, flipped: false, helpOpen: false, panel: null,
+      saveOpen: false, saveName: '', saveKind: 'event',
+      natal: Object.assign({ date: '', time: '', place: '', lat: '', lon: '' }, saved.natal),
+      showNatal: saved.showNatal ?? true,
+      show: Object.assign({ nodes: true, lilith: false, chiron: false }, saved.show),
+      planetOn: Object.assign(Object.fromEntries(this.BODIES.map((b) => [b, true])), saved.planetOn),
+      aspOn: Object.assign({ 0: true, 60: true, 90: true, 120: true, 180: true }, saved.aspOn),
+      settings: Object.assign({}, this.DEFAULTS, saved.settings),
+      saved: charts,
+      evName: '', evWhen: '', locLabel: loc.label || null, locPlace: loc.place || '', locSet: !!saved.loc,
+    };
+  }
+
+  _elemOf(lon) { return this.ELEM[Math.floor(this.norm(lon) / 30) % 4]; }
+  _hexA(hex, a) {
+    const r = parseInt(hex.slice(1, 3), 16), g = parseInt(hex.slice(3, 5), 16), b = parseInt(hex.slice(5, 7), 16);
+    return 'rgba(' + r + ',' + g + ',' + b + ',' + a + ')';
+  }
+
+  _active() {
+    const b = this.BODIES.filter((n) => this.state.planetOn[n] !== false);
+    const s = this.state.show;
+    if (s.nodes) b.push('Node', 'SNode');
+    if (s.lilith) b.push('Lilith');
+    if (s.chiron) b.push('Chiron');
+    return b;
+  }
+  _aspects() { return this.ASPECTS.filter(([ang]) => this.state.aspOn[ang] !== false); }
+  _partners(held) {
+    return this._active().filter((n) => n !== 'SNode' && n !== held && !(held === 'SNode' && n === 'Node'));
+  }
+
+  _persist(patch) {
+    const s = Object.assign({}, this.state, patch || {});
+    try {
+      localStorage.setItem('orbo.astrolabe.back', JSON.stringify({
+        natal: s.natal, showNatal: s.showNatal, show: s.show, planetOn: s.planetOn,
+        aspOn: s.aspOn, settings: s.settings, saved: s.saved,
+        loc: s.locSet ? { lat: this.lat, lng: this.lng, label: s.locLabel, place: s.locPlace } : null,
+      }));
+    } catch (e) {}
+  }
+  _setNatal(k, v) {
+    const natal = Object.assign({}, this.state.natal); natal[k] = v;
+    this._natalKey = null;
+    this.setState({ natal }); this._persist({ natal });
+  }
+  _setSetting(k, v) {
+    const settings = Object.assign({}, this.state.settings); settings[k] = v;
+    this.setState({ settings }); this._persist({ settings });
+  }
+  _toggleShow(k) {
+    const show = Object.assign({}, this.state.show); show[k] = !show[k];
+    this.setState({ show }, () => { if (this.held && this.held !== 'ASC' && !this._active().includes(this.held)) this.held = null; });
+    this._persist({ show });
+  }
+  _togglePlanet(n) {
+    const planetOn = Object.assign({}, this.state.planetOn); planetOn[n] = planetOn[n] === false;
+    if (this.held === n && !planetOn[n]) this.held = null;
+    this.setState({ planetOn }); this._persist({ planetOn });
+  }
+  _toggleAsp(ang) {
+    const aspOn = Object.assign({}, this.state.aspOn); aspOn[ang] = aspOn[ang] === false;
+    this.setState({ aspOn }); this._persist({ aspOn });
+  }
+  _cityMatch(v) {
+    if (!this.cities) return null;
+    const q = v.trim().toLowerCase();
+    return this.cities.find((c) => c.n.toLowerCase() === q) || null;
+  }
+
+  _saveChart(kind, name, alsoCal) {
+    const d = this.eph ? this.eph.jdToDate(this.jd) : new Date((this.jd - 2440587.5) * 86400000);
+    const item = {
+      name: name.trim() || 'Untitled moment', kind, jd: this.jd,
+      whenStr: d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) + ' \u00B7 ' + d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' }),
+    };
+    const saved = [...this.state.saved, item].sort((a, b) => a.jd - b.jd);
+    this.setState({ saved, saveOpen: false, saveName: '' });
+    this._persist({ saved });
+    if (alsoCal) this._ics(item);
+  }
+
+  _ics(item) {
+    const d = this.eph ? this.eph.jdToDate(item.jd) : new Date((item.jd - 2440587.5) * 86400000);
+    const p = (n) => String(n).padStart(2, '0');
+    const fmt = (dt) => dt.getFullYear() + p(dt.getMonth() + 1) + p(dt.getDate()) + 'T' + p(dt.getHours()) + p(dt.getMinutes()) + '00';
+    const end = new Date(d.getTime() + 3600000);
+    const txt = 'BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//Orbo//Astrolabe//EN\r\nBEGIN:VEVENT\r\nUID:' + Date.now() + '@orbo\r\nDTSTAMP:' + fmt(new Date()) + '\r\nDTSTART:' + fmt(d) + '\r\nDTEND:' + fmt(end) + '\r\nSUMMARY:' + item.name.replace(/[,;\\]/g, ' ') + '\r\nDESCRIPTION:Marked with the Orbo Astrolabe (' + item.kind + ')\r\nEND:VEVENT\r\nEND:VCALENDAR\r\n';
+    const url = URL.createObjectURL(new Blob([txt], { type: 'text/calendar' }));
+    const a = document.createElement('a');
+    a.href = url; a.download = item.name.replace(/\W+/g, '_') + '.ics'; a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 4000);
+  }
+
+  // back rim geometry (viewBox 0 0 100): Aries at 9 o'clock, counterclockwise, same as the front
+  _segPt(a, r) { const rad = a * Math.PI / 180; return [50 + r * Math.cos(rad), 50 - r * Math.sin(rad)]; }
+  _segD(k) {
+    const r1 = 38.5, r2 = 49, a1 = 180 + k * 30, a2 = a1 + 30;
+    const [x1o, y1o] = this._segPt(a1, r2), [x2o, y2o] = this._segPt(a2, r2);
+    const [x1i, y1i] = this._segPt(a1, r1), [x2i, y2i] = this._segPt(a2, r1);
+    return 'M ' + x1o.toFixed(2) + ' ' + y1o.toFixed(2) + ' A ' + r2 + ' ' + r2 + ' 0 0 0 ' + x2o.toFixed(2) + ' ' + y2o.toFixed(2) +
+      ' L ' + x2i.toFixed(2) + ' ' + y2i.toFixed(2) + ' A ' + r1 + ' ' + r1 + ' 0 0 1 ' + x1i.toFixed(2) + ' ' + y1i.toFixed(2) + ' Z';
+  }
+
+  _sectionDot(id) {
+    const s = this.state, df = this.DEFAULTS;
+    switch (id) {
+      case 'natal': return !!s.natal.date;
+      case 'loc': return s.locSet;
+      case 'planets': return this.BODIES.some((b) => s.planetOn[b] === false);
+      case 'aspects': return s.settings.orb !== df.orb || !s.settings.showWeb || Object.values(s.aspOn).some((v) => v === false);
+      case 'people': return s.saved.some((c) => c.kind === 'person');
+      case 'objects': return !s.show.nodes || s.show.lilith || s.show.chiron;
+      case 'transport': return s.settings.playSpeed !== df.playSpeed || s.settings.rimGear !== df.rimGear || s.settings.snapMagnet !== df.snapMagnet || s.settings.haptics !== df.haptics;
+      case 'events': return s.saved.some((c) => c.kind !== 'person');
+      default: return false;
+    }
+  }
+
+  renderVals() {
+    const sd = this.state.sheetData;
+    const s = this.state;
+    const onOff = (v) => v ? 'rgba(232,171,65,0.85)' : 'rgba(190,184,226,0.18)';
+    const knob = (v) => v ? '13px' : '2px';
+    const segs = this.SECTIONS.map((sec, k) => {
+      const activeP = sec.id && s.panel === sec.id;
+      const [gx, gy] = this._segPt(180 + k * 30 + 15, 43.75);
+      return {
+        d: this._segD(k), glyph: this.SIGNS[k] + '\uFE0E', gl: gx + '%', gt: gy + '%',
+        fill: activeP ? 'rgba(232,171,65,0.14)' : sec.id ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.12)',
+        col: activeP ? '#e8ab41' : sec.id ? '#a89ecf' : 'rgba(143,134,192,0.28)',
+        tap: sec.id ? () => this.setState({ panel: activeP ? null : sec.id }) : () => {},
+      };
+    });
+    const segDots = this.SECTIONS.map((sec, k) => ({ sec, k })).filter(({ sec }) => sec.id && this._sectionDot(sec.id)).map(({ k }) => {
+      const [x, y] = this._segPt(180 + k * 30 + 15, 40.2);
+      return { x, y };
+    });
+    const chartItem = (c, i) => ({
+      name: c.name, whenStr: c.whenStr,
+      badge: c.kind === 'horary' ? '? ' : '',
+      go: () => { this.setState({ flipped: false, panel: null }); this._homeJd = Math.min(this.JD_MAX, Math.max(this.JD_MIN, c.jd)); },
+      cal: (e) => { e.stopPropagation(); this._ics(c); },
+      del: (e) => { e.stopPropagation(); const saved = s.saved.filter((x) => x !== c); this.setState({ saved }); this._persist({ saved }); },
+    });
+    const people = s.saved.filter((c) => c.kind === 'person').map(chartItem);
+    const eventItems = s.saved.filter((c) => c.kind !== 'person').map(chartItem);
+    const KINDS = [['person', 'Person'], ['event', 'Event'], ['horary', 'Horary']];
+    return {
+      canvasRef: this.canvasRef, skyRef: this.skyRef, gearRef: this.gearRef, civilRef: this.civilRef,
+      goNow: () => { this._homeJd = Date.now() / 86400000 + 2440587.5; },
+      closeSheet: () => this.setState({ sheet: null }),
+      sheetTf: s.sheet ? 'translateY(0)' : 'translateY(115%)',
+      sheetHasData: !!sd,
+      sheetName: sd ? sd.label : '', sheetRx: sd && sd.rx ? ' \u211E' : '',
+      sheetGlyph: sd ? sd.glyph : '', sheetColor: sd ? sd.color : '#dcd7f0',
+      sheetPos: sd ? sd.pos : '', sheetAspects: sd ? sd.aspects : [],
+      sheetEmpty: sd ? sd.aspects.length === 0 : false,
+      helpOpen: s.helpOpen,
+      openHelp: () => this.setState({ helpOpen: true }),
+      closeHelp: () => this.setState({ helpOpen: false }),
+      flipTf: s.flipped ? 'rotateY(180deg)' : 'rotateY(0deg)',
+      frontPe: s.flipped ? 'none' : 'auto',
+      backPe: s.flipped ? 'auto' : 'none',
+      flipBack: () => this.setState({ flipped: false }),
+      // back rim + panels
+      segs, segDots,
+      legend: this.SECTIONS.map((sec, k) => ({
+        glyph: this.SIGNS[k], name: sec.name || '\u2014',
+        op: sec.id ? 1 : 0.32,
+        tap: sec.id ? () => this.setState({ panel: sec.id }) : () => {},
+      })),
+      closePanel: () => this.setState({ panel: null }),
+      pLegend: !s.panel, pNatal: s.panel === 'natal', pLoc: s.panel === 'loc', pPlanets: s.panel === 'planets',
+      pObjects: s.panel === 'objects', pAspects: s.panel === 'aspects', pTransport: s.panel === 'transport',
+      pPeople: s.panel === 'people', pEvents: s.panel === 'events',
+      cityOpts: this.cities ? this.cities.map((c) => c.n) : [],
+      // natal
+      natalDate: s.natal.date, natalTime: s.natal.time, natalPlace: s.natal.place,
+      onNatalDate: (e) => this._setNatal('date', e.target.value),
+      onNatalTime: (e) => this._setNatal('time', e.target.value),
+      onNatalPlace: (e) => {
+        const v = e.target.value;
+        const hit = this._cityMatch(v);
+        const natal = Object.assign({}, this.state.natal, { place: v, lat: hit ? String(hit.la) : this.state.natal.lat, lon: hit ? String(hit.lo) : this.state.natal.lon });
+        if (hit) this._natalKey = null;
+        this.setState({ natal }); this._persist({ natal });
+      },
+      natalCityCol: this._cityMatch(s.natal.place) || (s.natal.lat && s.natal.place) ? '#6fa06f' : '#5a5090',
+      natalCityNote: this._cityMatch(s.natal.place) || (s.natal.lat && s.natal.place) ? 'place found \u2014 rising sign unlocked' : 'pick from the list to place your horizon',
+      toggleNatalRing: () => { this.setState({ showNatal: !s.showNatal }); this._persist({ showNatal: !s.showNatal }); },
+      natalBg: onOff(s.showNatal), natalKnob: knob(s.showNatal),
+      // here & now
+      locStr: Math.abs(this.lat).toFixed(2) + '\u00B0 ' + (this.lat >= 0 ? 'N' : 'S') + ' \u00B7 ' + Math.abs(this.lng).toFixed(2) + '\u00B0 ' + (this.lng >= 0 ? 'E' : 'W'),
+      locNote: s.locLabel || 'fallback: Richland Center, WI \u2014 locate to make the horizon yours',
+      locPlace: s.locPlace,
+      onLocPlace: (e) => {
+        const v = e.target.value;
+        const hit = this._cityMatch(v);
+        if (hit) { this.lat = hit.la; this.lng = hit.lo; this._pjd = null; }
+        this.setState({ locPlace: v, locSet: this.state.locSet || !!hit, locLabel: hit ? 'set to ' + hit.n : this.state.locLabel }, () => this._persist());
+      },
+      useMyLocation: () => {
+        if (!navigator.geolocation) { this.setState({ locLabel: 'geolocation unavailable in this browser' }); return; }
+        navigator.geolocation.getCurrentPosition(
+          (p) => { this.lat = p.coords.latitude; this.lng = p.coords.longitude; this._pjd = null; this.setState({ locLabel: 'located \u2014 the horizon is yours', locSet: true }, () => this._persist()); },
+          () => this.setState({ locLabel: 'location denied \u2014 still on the fallback' })
+        );
+      },
+      // planets
+      planetChips: this.BODIES.map((b) => {
+        const on = s.planetOn[b] !== false;
+        return {
+          glyph: this.GLYPH[b], name: b,
+          col: on ? '#ece8f8' : 'rgba(143,134,192,0.35)', txt: on ? '#a89ecf' : 'rgba(143,134,192,0.35)',
+          bd: on ? 'rgba(232,171,65,0.4)' : 'rgba(190,184,226,0.12)',
+          tap: () => this._togglePlanet(b),
+        };
+      }),
+      // objects
+      objectChips: [
+        { key: 'nodes', glyph: '\u260A \u260B', name: 'N & S Node' },
+        { key: 'lilith', glyph: '\u26B8', name: 'Black Moon Lilith' },
+        { key: 'chiron', glyph: '\u26B7', name: 'Chiron' },
+      ].map((o) => {
+        const on = !!s.show[o.key];
+        return {
+          glyph: o.glyph, name: o.name,
+          col: on ? '#ece8f8' : 'rgba(143,134,192,0.35)', txt: on ? '#a89ecf' : 'rgba(143,134,192,0.35)',
+          bd: on ? 'rgba(232,171,65,0.4)' : 'rgba(190,184,226,0.12)',
+          tap: () => this._toggleShow(o.key),
+        };
+      }),
+      // aspects
+      aspectChips: this.ASPECTS.map(([ang, color]) => {
+        const on = s.aspOn[ang] !== false;
+        return {
+          glyph: this.ASYM[ang],
+          col: on ? color : 'rgba(143,134,192,0.3)',
+          bd: on ? this._hexA(color === '#ece8f8' ? '#a89ecf' : color, 0.45) : 'rgba(190,184,226,0.12)',
+          tap: () => this._toggleAsp(ang),
+        };
+      }),
+      orbVal: s.settings.orb,
+      onOrb: (e) => this._setSetting('orb', parseFloat(e.target.value)),
+      toggleWeb: () => this._setSetting('showWeb', !s.settings.showWeb),
+      webBg: onOff(s.settings.showWeb), webKnob: knob(s.settings.showWeb),
+      // transport
+      speedVal: s.settings.playSpeed,
+      speedUnit: this.frame === 'horizon' ? 'min/s' : 'h/s',
+      onSpeed: (e) => this._setSetting('playSpeed', parseFloat(e.target.value)),
+      gearVal: s.settings.rimGear,
+      onGear: (e) => this._setSetting('rimGear', parseFloat(e.target.value)),
+      magVal: s.settings.snapMagnet,
+      onMag: (e) => this._setSetting('snapMagnet', parseFloat(e.target.value)),
+      toggleHaptics: () => this._setSetting('haptics', !s.settings.haptics),
+      hapBg: onOff(s.settings.haptics), hapKnob: knob(s.settings.haptics),
+      // people & events
+      people, noPeople: people.length === 0,
+      eventItems, noEvents: eventItems.length === 0,
+      evName: s.evName, evWhen: s.evWhen,
+      onEvName: (e) => this.setState({ evName: e.target.value }),
+      onEvWhen: (e) => this.setState({ evWhen: e.target.value }),
+      addEvent: () => {
+        const d = new Date(s.evWhen);
+        if (!s.evName.trim() || isNaN(d)) return;
+        const jd = d.getTime() / 86400000 + 2440587.5;
+        const whenStr = d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) + ' \u00B7 ' + d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+        const saved = [...s.saved, { name: s.evName.trim(), kind: 'event', jd, whenStr }].sort((a, b) => a.jd - b.jd);
+        this.setState({ saved, evName: '', evWhen: '' }); this._persist({ saved });
+      },
+      // save dialog (front, long-press center)
+      saveOpen: s.saveOpen,
+      closeSave: () => this.setState({ saveOpen: false }),
+      eatTap: (e) => e.stopPropagation(),
+      saveWhen: this.eph ? (() => { const d = this.eph.jdToDate(this.jd); return d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' }) + ' \u00B7 ' + d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' }); })() : '',
+      saveName: s.saveName,
+      onSaveName: (e) => this.setState({ saveName: e.target.value }),
+      kindChips: KINDS.map(([k, label]) => ({
+        name: label,
+        col: s.saveKind === k ? '#e8ab41' : '#857cb5',
+        bd: s.saveKind === k ? 'rgba(232,171,65,0.55)' : 'rgba(190,184,226,0.15)',
+        tap: () => this.setState({ saveKind: k }),
+      })),
+      doSave: () => this._saveChart(s.saveKind, s.saveName, false),
+      doSaveCal: () => this._saveChart(s.saveKind, s.saveName, true),
+    };
+  }
+
+  async componentDidMount() {
+    this.eph = await import(window.__resources && window.__resources.ephem ? window.__resources.ephem : new URL('ephem.js', location.href).href);
+    try { this.cities = (await import(window.__resources && window.__resources.cities ? window.__resources.cities : new URL('cities.js', location.href).href)).CITIES; this.forceUpdate(); } catch (e) {}
+    const c = this.canvasRef.current;
+    if (!c) return;
+    this._ro = new ResizeObserver(() => this._size());
+    this._ro.observe(c.parentElement);
+    this._size();
+    c.addEventListener('pointerdown', this._down);
+    c.addEventListener('pointermove', this._move);
+    c.addEventListener('pointerup', this._up);
+    c.addEventListener('pointercancel', this._up);
+    const loop = (t) => { this._tick(t); this._raf = requestAnimationFrame(loop); };
+    this._raf = requestAnimationFrame(loop);
+  }
+
+  componentWillUnmount() {
+    cancelAnimationFrame(this._raf);
+    if (this._ro) this._ro.disconnect();
+  }
+
+  norm(x) { x %= 360; return x < 0 ? x + 360 : x; }
+  wrap(x) { x = this.norm(x); return x > 180 ? x - 360 : x; }
+
+  _size() {
+    const c = this.canvasRef.current;
+    if (!c || !c.parentElement) return;
+    const w = c.parentElement.clientWidth;
+    if (!w) return;
+    const dpr = window.devicePixelRatio || 1;
+    c.width = Math.round(w * dpr); c.height = Math.round(w * dpr);
+    c.style.height = w + 'px';
+    this.dpr = dpr; this.w = w; this.cx = w / 2; this.cy = w / 2; this.R = w / 2 - 20;
+  }
+
+  _xy(lon, r, fixed) {
+    const a = (180 + lon + (fixed ? 0 : this._rot || 0)) * Math.PI / 180;
+    return [this.cx + r * Math.cos(a), this.cy - r * Math.sin(a)];
+  }
+  _fingerLon(x, y) {
+    return this.norm(Math.atan2(this.cy - y, x - this.cx) * 180 / Math.PI - 180 - (this._rot || 0));
+  }
+
+  _down = (e) => {
+    if (!this.eph) return;
+    const x = e.offsetX, y = e.offsetY;
+    const r = Math.hypot(x - this.cx, y - this.cy);
+    try { e.target.setPointerCapture(e.pointerId); } catch (err) {}
+    this._downAt = [x, y];
+    let best = null, bestD = 30;
+    for (const [name, pt] of Object.entries(this._screen)) {
+      const d = Math.hypot(x - pt[0], y - pt[1]);
+      if (d < bestD) { bestD = d; best = name; }
+    }
+    if (best) {
+      this._homeJd = null;
+      if (best !== 'ASC') {
+        const now2 = performance.now();
+        if (this._tapB === best && now2 - (this._tapT || 0) < 350) {
+          this._tapT = 0;
+          this._openSheet(best);
+          this._centerCand = false;
+          return;
+        }
+        this._tapT = now2; this._tapB = best;
+      }
+      if (best === 'ASC') {
+        const now = performance.now();
+        if (now - (this._ascTapT || 0) < 350) {
+          this._ascTapT = 0;
+          this.frame = this.frame === 'horizon' ? 'sky' : 'horizon';
+          this._centerCand = false;
+          return;
+        }
+        this._ascTapT = now;
+      }
+      this.held = best;
+      this._lastLon = this._fingerLon(x, y);
+      this._grabR = Math.max(60, r);
+      this._gearMult = 1;
+      this._rawJd = this.jd;
+      this._pressT = performance.now();
+      this._movedPx = 0;
+      this._lastXY = [x, y];
+      this._centerCand = false;
+      return;
+    }
+    const now3 = performance.now();
+    // double-tap the rim (tick + sign band) = flip the disc
+    if (r > this.R - 44) {
+      if (now3 - (this._edgeT || 0) < 350) {
+        this._edgeT = 0;
+        this.setState({ flipped: true });
+        this._centerCand = false;
+        return;
+      }
+      this._edgeT = now3;
+    }
+    // center: tap = play/pause, hold = mark the moment
+    this._centerCand = r < 60;
+    this._centerDown = this._centerCand;
+    this._centerT = now3;
+  }
+
+  _move = (e) => {
+    if (!this.held) {
+      if (this._centerCand && this._downAt && Math.hypot(e.offsetX - this._downAt[0], e.offsetY - this._downAt[1]) > 10) { this._centerCand = false; this._centerDown = false; }
+      return;
+    }
+    if (this._lastXY) {
+      this._movedPx = (this._movedPx || 0) + Math.hypot(e.offsetX - this._lastXY[0], e.offsetY - this._lastXY[1]);
+      this._lastXY = [e.offsetX, e.offsetY];
+    }
+    const lon = this._fingerLon(e.offsetX, e.offsetY);
+    const dLon = this.wrap(lon - this._lastLon);
+    this._lastLon = lon;
+    const r = Math.max(60, Math.hypot(e.offsetX - this.cx, e.offsetY - this.cy));
+    const k = this.state.settings.rimGear;
+    this._gearMult = Math.pow(this._grabR / r, k);
+    this._rawJd = Math.min(this.JD_MAX, Math.max(this.JD_MIN, (this._rawJd ?? this.jd) + dLon / 360 * this.PERIODS[this.held] * this._gearMult));
+    this.jd = this._applyMagnet(this._rawJd);
+  }
+
+  _up = () => {
+    if (this._centerCand && this._centerDown) this.playing = !this.playing;
+    this._centerCand = false;
+    this._centerDown = false;
+    this.held = null;
+    this._gearMult = 1;
+    this._pressT = null;
+  }
+
+  _tick(t) {
+    if (!this.eph || !this.w) { this._lastT = t; return; }
+    const dt = this._lastT ? (t - this._lastT) / 1000 : 0;
+    this._lastT = t;
+    if (this._homeJd != null && !this.held) {
+      const dh = this._homeJd - this.jd;
+      if (Math.abs(dh) < 1e-4) { this.jd = this._homeJd; this._homeJd = null; }
+      else this.jd += dh * Math.min(1, dt * 4);
+    }
+    if (this.playing && !this.held) {
+      const v = this.state.settings.playSpeed;
+      // horizon lock = nuanced timing: the dial reads MINUTES per second; free frame = hours
+      const hps = this.frame === 'horizon' ? v / 60 : v;
+      this.jd = Math.min(this.JD_MAX, this.jd + dt * hps / 24);
+    }
+    // hold the center = mark the moment
+    if (this._centerDown && this._centerCand && performance.now() - this._centerT > 600) {
+      this._centerDown = false; this._centerCand = false;
+      this.setState({ saveOpen: true, saveName: '', saveKind: 'event' });
+    }
+    // long-press a planet (held, still) summons its reading
+    if (this.held && this.held !== 'ASC' && this._pressT && performance.now() - this._pressT > 600 && (this._movedPx || 0) < 8) {
+      const b = this.held;
+      this.held = null; this._pressT = null;
+      this._openSheet(b);
+    }
+    if (this.state.sheet && this.state.sheetData && this.state.sheetData.jd !== this.jd && performance.now() - (this._sheetUp || 0) > 150) {
+      this._sheetUp = performance.now();
+      this.setState({ sheetData: this._sheetData(this.state.sheet) });
+    }
+    if (this._pjd !== this.jd) {
+      const prevPos = this.pos, prevAsc = this.asc;
+      this.pos = this.eph.positions(this.jd);
+      this.asc = this.eph.angles(this.jd, this.lat, this.lng).asc;
+      this._pjd = this.jd;
+      if (this.held && prevPos) this._checkTicks(prevPos, prevAsc);
+    }
+    const rotTarget = this.frame === 'horizon' ? -this.asc : 0;
+    if (!(this.held && this.held !== 'ASC')) {
+      const dRot = this.wrap(rotTarget - this._rot);
+      this._rot = Math.abs(dRot) < 0.01 ? rotTarget : this._rot + dRot * Math.min(1, dt * 5);
+    }
+    this._draw();
+    this._readouts();
+  }
+
+  _applyMagnet(raw) {
+    const m = this.state.settings.snapMagnet;
+    const held = this.held;
+    if (!m || !held || !this.eph) return raw;
+    const win = 1.5;
+    const h = Math.min(0.05, this.PERIODS[held] / 2000);
+    const isAsc = held === 'ASC';
+    const p1 = this.eph.positions(raw), p2 = this.eph.positions(raw + h);
+    const lonH1 = isAsc ? this.eph.angles(raw, this.lat, this.lng).asc : p1[held];
+    const lonH2 = isAsc ? this.eph.angles(raw + h, this.lat, this.lng).asc : p2[held];
+    const partners = this._partners(isAsc ? null : held);
+    const aspects = this._aspects();
+    let best = null;
+    for (const o of partners) {
+      const D1 = Math.abs(this.wrap(lonH1 - p1[o]));
+      const D2 = Math.abs(this.wrap(lonH2 - p2[o]));
+      for (const [ang] of aspects) {
+        const r1 = D1 - ang;
+        if (Math.abs(r1) > win) continue;
+        const v = (D2 - ang - r1) / h;
+        if (Math.abs(v) < 1e-6) continue;
+        if (!best || Math.abs(r1) < best.r) best = { dt: -r1 / v, r: Math.abs(r1) };
+      }
+    }
+    const L1 = this.norm(lonH1);
+    const bnd = Math.round(L1 / 30) * 30;
+    const ri = this.wrap(L1 - bnd);
+    if (Math.abs(ri) <= win) {
+      const v = this.wrap(lonH2 - lonH1) / h;
+      if (Math.abs(v) > 1e-6 && (!best || Math.abs(ri) < best.r)) best = { dt: -ri / v, r: Math.abs(ri) };
+    }
+    if (!best) return raw;
+    if (Math.abs(best.dt) > this.PERIODS[held] * win / 360 * 8) return raw;
+    const u = 1 - best.r / win;
+    const w = m * u * u * (3 - 2 * u);
+    return Math.min(this.JD_MAX, Math.max(this.JD_MIN, raw + best.dt * w));
+  }
+
+  _aspectStatus() {
+    const held = this.held;
+    if (!held || !this.eph) return null;
+    const orb = this.state.settings.orb;
+    const h = Math.min(0.05, this.PERIODS[held] / 2000);
+    const isAsc = held === 'ASC';
+    const p2 = this.eph.positions(this.jd + h);
+    const lonH1 = isAsc ? this.asc : this.pos[held];
+    const lonH2 = isAsc ? this.eph.angles(this.jd + h, this.lat, this.lng).asc : p2[held];
+    const partners = this._partners(isAsc ? null : held);
+    const aspects = this._aspects();
+    let best = null;
+    for (const o of partners) {
+      const D1 = Math.abs(this.wrap(lonH1 - this.pos[o]));
+      const D2 = Math.abs(this.wrap(lonH2 - p2[o]));
+      for (const [ang] of aspects) {
+        const r1 = Math.abs(D1 - ang);
+        if (r1 > orb) continue;
+        if (!best || r1 < best.r) best = { r: r1, ang, o, applying: Math.abs(D2 - ang) < r1 };
+      }
+    }
+    if (!best) return null;
+    const d = Math.floor(best.r);
+    const mm = String(Math.floor((best.r % 1) * 60)).padStart(2, '0');
+    return this.ASYM[best.ang] + ' ' + (this.LABEL[best.o] || best.o).toUpperCase() + ' ' + d + '\u00B0' + mm + '\u2032 ' + (best.applying ? 'APPLYING' : 'SEPARATING');
+  }
+
+  _openSheet(name) {
+    this.setState({ sheet: name, sheetData: this._sheetData(name) });
+  }
+
+  _sheetData(name) {
+    const lon = this.pos[name];
+    const s = Math.floor(this.norm(lon) / 30);
+    let rx = false;
+    if (!this.NO_RX.includes(name)) {
+      const ahead = this.eph.positions(this.jd + 0.2)[name];
+      rx = this.wrap(ahead - lon) < 0;
+    }
+    return {
+      jd: this.jd, name, rx,
+      label: this.LABEL[name] || name,
+      glyph: this.GLYPH[name],
+      color: this.ELEM[s % 4],
+      pos: this._fmtLong(lon) + ' \u00B7 ' + this.ELEM_NAME[s % 4],
+      aspects: this._aspectListFor(name),
+    };
+  }
+
+  _aspectListFor(name) {
+    const orb = this.state.settings.orb;
+    const h = Math.min(0.05, this.PERIODS[name] / 2000);
+    const p2 = this.eph.positions(this.jd + h);
+    const asc2 = this.eph.angles(this.jd + h, this.lat, this.lng).asc;
+    const lon1 = this.pos[name], lon2 = p2[name];
+    const aspects = this._aspects();
+    const out = [];
+    for (const o of ['ASC', ...this._active()]) {
+      if (o === name || o === 'SNode' || (name === 'SNode' && o === 'Node')) continue;
+      const o1 = o === 'ASC' ? this.asc : this.pos[o], o2 = o === 'ASC' ? asc2 : p2[o];
+      const D1 = Math.abs(this.wrap(lon1 - o1)), D2 = Math.abs(this.wrap(lon2 - o2));
+      for (const [ang] of aspects) {
+        const r1 = Math.abs(D1 - ang);
+        if (r1 > orb) continue;
+        const applying = Math.abs(D2 - ang) < r1;
+        out.push({
+          r: r1,
+          label: this.ASYM[ang] + '  ' + (o === 'ASC' ? 'Ascendant' : this.GLYPH[o] + ' ' + (this.LABEL[o] || o)),
+          orbStr: Math.floor(r1) + '\u00B0' + String(Math.floor((r1 % 1) * 60)).padStart(2, '0') + '\u2032',
+          phase: applying ? 'applying' : 'separating',
+          phaseColor: applying ? '#e8ab41' : '#857cb5',
+        });
+      }
+    }
+    return out.sort((a, b) => a.r - b.r);
+  }
+
+  _checkTicks(prevPos, prevAsc) {
+    const lonOf = (p, a, n) => n === 'ASC' ? a : p[n];
+    const cur = lonOf(this.pos, this.asc, this.held);
+    const prev = lonOf(prevPos, prevAsc, this.held);
+    if (cur === undefined || prev === undefined || cur === prev) return;
+    let kind = null;
+    if (Math.floor(this.norm(prev)) !== Math.floor(this.norm(cur))) {
+      kind = Math.floor(this.norm(prev) / 30) !== Math.floor(this.norm(cur) / 30) ? 'sign' : 'deg';
+    }
+    const aspects = this._aspects();
+    const others = ['ASC', ...this._active()].filter((n) => n !== this.held && n !== 'SNode' && !(this.held === 'SNode' && n === 'Node'));
+    outer: for (const o of others) {
+      const oPrev = lonOf(prevPos, prevAsc, o), oCur = lonOf(this.pos, this.asc, o);
+      if (oPrev === undefined || oCur === undefined) continue;
+      const dPrev = Math.abs(this.wrap(prev - oPrev)), dCur = Math.abs(this.wrap(cur - oCur));
+      for (const [ang] of aspects) {
+        if (Math.abs(dCur - ang) > 6 && Math.abs(dPrev - ang) > 6) continue;
+        if ((dPrev - ang) * (dCur - ang) <= 0) { kind = 'aspect'; break outer; }
+      }
+    }
+    if (kind) this._pulseFx(kind);
+  }
+
+  _pulseFx(kind) {
+    this._pulse = { t0: performance.now(), kind };
+    if (this.state.settings.haptics && navigator.vibrate) {
+      navigator.vibrate(kind === 'aspect' ? [12, 40, 20] : kind === 'sign' ? 16 : 5);
+    }
+  }
+
+  _natalJd() {
+    const n = this.state.natal;
+    if (!n.date) return null;
+    const d = new Date(n.date + 'T' + (n.time || '12:00'));
+    if (isNaN(d)) return null;
+    return d.getTime() / 86400000 + 2440587.5;
+  }
+
+  _draw() {
+    const c = this.canvasRef.current, ctx = c.getContext('2d');
+    const { w, cx, cy, R } = this;
+    ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
+    ctx.clearRect(0, 0, w, w);
+    const orb = this.state.settings.orb;
+    const rDeep = R - 96;
+    ctx.save();
+    ctx.shadowColor = 'rgba(0,0,0,0.6)'; ctx.shadowBlur = 22; ctx.shadowOffsetY = 8;
+    ctx.fillStyle = '#181143';
+    ctx.beginPath(); ctx.arc(cx, cy, R + 5, 0, 7); ctx.fill();
+    ctx.restore();
+    ctx.strokeStyle = 'rgba(190,184,226,0.3)'; ctx.lineWidth = 1.3;
+    ctx.beginPath(); ctx.arc(cx, cy, R + 5, 0, 7); ctx.stroke();
+    ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+    ctx.beginPath(); ctx.arc(cx, cy, R + 3, 0, 7); ctx.stroke();
+    const vg = ctx.createRadialGradient(cx, cy, 0, cx, cy, rDeep);
+    vg.addColorStop(0, 'rgba(6,4,18,0.38)'); vg.addColorStop(1, 'rgba(6,4,18,0)');
+    ctx.fillStyle = vg;
+    ctx.beginPath(); ctx.arc(cx, cy, rDeep, 0, 7); ctx.fill();
+    if (!this._stars) {
+      this._stars = [];
+      let sd = 42;
+      const rnd = () => (sd = (sd * 16807) % 2147483647) / 2147483647;
+      for (let i = 0; i < 46; i++) this._stars.push({ lon: rnd() * 360, rr: Math.sqrt(rnd()), a: 0.1 + rnd() * 0.28, sz: 0.5 + rnd() * 0.9 });
+    }
+    for (const st of this._stars) {
+      const [sx, sy] = this._xy(st.lon, st.rr * (rDeep - 6));
+      ctx.fillStyle = 'rgba(236,232,248,' + st.a + ')';
+      ctx.beginPath(); ctx.arc(sx, sy, st.sz, 0, 7); ctx.fill();
+    }
+    const showWeb = this.state.settings.showWeb;
+    const rSignOut = R - 12, rSignIn = R - 44, rBody = R - 66, rAsp = R - 96;
+
+    for (let d = 0; d < 360; d++) {
+      const len = d % 30 === 0 ? 12 : d % 10 === 0 ? 9 : d % 5 === 0 ? 6.5 : 4;
+      const a = d % 30 === 0 ? 0.5 : d % 10 === 0 ? 0.32 : 0.18;
+      ctx.strokeStyle = 'rgba(190,184,226,' + a + ')';
+      ctx.lineWidth = d % 30 === 0 ? 1.4 : 1;
+      const [x1, y1] = this._xy(d, R - len, true), [x2, y2] = this._xy(d, R, true);
+      ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+    }
+    ctx.strokeStyle = 'rgba(190,184,226,0.22)'; ctx.lineWidth = 1;
+    for (const r of [rSignOut, rSignIn]) { ctx.beginPath(); ctx.arc(cx, cy, r, 0, 7); ctx.stroke(); }
+    for (let k = 0; k < 12; k++) {
+      const [x1, y1] = this._xy(k * 30, rSignIn), [x2, y2] = this._xy(k * 30, rSignOut);
+      ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+      const [gx, gy] = this._xy(k * 30 + 15, (rSignOut + rSignIn) / 2);
+      ctx.fillStyle = this.ELEM[k % 4];
+      ctx.shadowColor = this.ELEM[k % 4]; ctx.shadowBlur = 9;
+      ctx.font = '16px "Noto Sans Symbols 2","Segoe UI Symbol","Apple Symbols",serif';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(this.SIGNS[k], gx, gy);
+      ctx.shadowBlur = 0;
+    }
+    for (let k = 0; k < 12; k++) {
+      const a1 = -((180 + k * 30 + (this._rot || 0)) * Math.PI / 180), a2 = -((180 + k * 30 + 30 + (this._rot || 0)) * Math.PI / 180);
+      ctx.fillStyle = this.ELEM[k % 4];
+      ctx.globalAlpha = 0.05;
+      ctx.beginPath();
+      ctx.arc(cx, cy, rSignIn - 1, a1, a2, true);
+      ctx.arc(cx, cy, rAsp, a2, a1, false);
+      ctx.closePath(); ctx.fill();
+      ctx.globalAlpha = 1;
+      const [sx1, sy1] = this._xy(k * 30, rAsp), [sx2, sy2] = this._xy(k * 30, rSignIn);
+      ctx.strokeStyle = 'rgba(190,184,226,0.1)'; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(sx1, sy1); ctx.lineTo(sx2, sy2); ctx.stroke();
+    }
+
+    const bz = ctx.createRadialGradient(cx, cy, rSignIn - 30, cx, cy, rSignIn);
+    bz.addColorStop(0, 'rgba(5,3,15,0)'); bz.addColorStop(1, 'rgba(5,3,15,0.32)');
+    ctx.fillStyle = bz;
+    ctx.beginPath(); ctx.arc(cx, cy, rSignIn, 0, 7); ctx.fill();
+
+    ctx.strokeStyle = 'rgba(190,184,226,0.14)';
+    ctx.beginPath(); ctx.arc(cx, cy, rAsp, 0, 7); ctx.stroke();
+
+    const act = this._active();
+
+    if (this.state.showNatal) {
+      const njd = this._natalJd();
+      if (njd) {
+        if (this._natalKey !== njd) {
+          this._natalKey = njd;
+          this._natalPos = this.eph.positions(njd);
+          const la = parseFloat(this.state.natal.lat), lo = parseFloat(this.state.natal.lon);
+          this._natalAsc = isFinite(la) && isFinite(lo) ? this.eph.angles(njd, la, lo).asc : null;
+        }
+        const rN = rAsp - 14;
+        ctx.strokeStyle = 'rgba(143,134,192,0.16)'; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.arc(cx, cy, rN, 0, 7); ctx.stroke();
+        ctx.font = '10px "Noto Sans Symbols 2","Segoe UI Symbol","Apple Symbols",serif';
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        for (const b of this.BODIES) {
+          const [nx, ny] = this._xy(this._natalPos[b], rN);
+          ctx.fillStyle = 'rgba(160,150,205,0.75)';
+          ctx.fillText(this.GLYPH[b], nx, ny);
+        }
+        if (this._natalAsc != null) {
+          const [nx, ny] = this._xy(this._natalAsc, rN);
+          ctx.fillStyle = 'rgba(160,150,205,0.85)';
+          ctx.font = 'bold 9px "Avenir Next","Century Gothic",sans-serif';
+          ctx.fillText('As', nx, ny);
+        }
+      }
+    }
+
+    if (act.includes('Node')) {
+      const [n1x, n1y] = this._xy(this.pos.Node, rAsp), [n2x, n2y] = this._xy(this.pos.SNode, rAsp);
+      ctx.setLineDash([3, 5]);
+      ctx.strokeStyle = 'rgba(220,214,240,0.2)'; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(n1x, n1y); ctx.lineTo(n2x, n2y); ctx.stroke();
+      ctx.setLineDash([]);
+    }
+
+    const aspects = this._aspects();
+    const lons = { ASC: this.asc };
+    for (const b of act) if (b !== 'SNode') lons[b] = this.pos[b];
+    const names = Object.keys(lons);
+    for (let i = 0; i < names.length; i++) for (let j = i + 1; j < names.length; j++) {
+      const a = names[i], b = names[j];
+      const diff = Math.abs(this.wrap(lons[a] - lons[b]));
+      for (const [ang, color] of aspects) {
+        const d = Math.abs(diff - ang);
+        if (d > orb) continue;
+        const tt = 1 - d / orb;
+        const involvesHeld = this.held && (a === this.held || b === this.held);
+        if (!involvesHeld && !showWeb) continue;
+        ctx.globalAlpha = involvesHeld ? 0.22 + 0.7 * tt : this.held ? 0.05 + 0.07 * tt : 0.14 + 0.22 * tt;
+        ctx.strokeStyle = color;
+        ctx.lineWidth = involvesHeld ? 0.9 + 2 * tt : this.held ? 0.8 : 1.1;
+        const [x1, y1] = this._xy(lons[a], rAsp), [x2, y2] = this._xy(lons[b], rAsp);
+        ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+        break;
+      }
+    }
+    ctx.globalAlpha = 1;
+
+    const ascCol = this._elemOf(this.asc);
+    const [ax1, ay1] = this._xy(this.asc, rAsp), [ax2, ay2] = this._xy(this.asc, R - 10);
+    ctx.strokeStyle = this.held === 'ASC' ? this._hexA(ascCol, 0.95) : this._hexA(ascCol, 0.5);
+    ctx.lineWidth = this.held === 'ASC' ? 2 : 1.3;
+    ctx.beginPath(); ctx.moveTo(ax1, ay1); ctx.lineTo(ax2, ay2); ctx.stroke();
+    const [alx, aly] = this._xy(this.asc, R + 1);
+    ctx.fillStyle = '#140e30';
+    ctx.beginPath(); ctx.arc(alx, aly, 11, 0, 7); ctx.fill();
+    ctx.strokeStyle = this._hexA(ascCol, this.held === 'ASC' ? 0.95 : 0.55); ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.arc(alx, aly, 11, 0, 7); ctx.stroke();
+    ctx.fillStyle = ascCol;
+    ctx.font = 'bold 11px "Avenir Next","Century Gothic",sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('As', alx, aly);
+    this._screen = { ASC: [alx, aly] };
+
+    const order = act.map((n) => ({ n, lon: this.pos[n], lvl: 0 })).sort((p, q) => p.lon - q.lon);
+    let cluster = [];
+    const clusters = [];
+    for (const o of order) {
+      if (cluster.length && o.lon - cluster[cluster.length - 1].lon < 9) cluster.push(o);
+      else { cluster = [o]; clusters.push(cluster); }
+    }
+    for (const cl of clusters) {
+      [...cl].sort((p, q) => this.PERIODS[p.n] - this.PERIODS[q.n]).forEach((o, i) => { o.lvl = i % 2; });
+    }
+    const drawOrder = [...order].sort((p, q) => this.PERIODS[q.n] - this.PERIODS[p.n]);
+    for (const o of drawOrder) {
+      const r = rBody - o.lvl * 24;
+      const [x, y] = this._xy(o.lon, r);
+      const isHeld = this.held === o.n;
+      const [t1x, t1y] = this._xy(o.lon, rSignIn - 5), [t2x, t2y] = this._xy(o.lon, rSignIn);
+      ctx.strokeStyle = isHeld ? 'rgba(232,171,65,0.95)' : 'rgba(220,214,240,0.5)';
+      ctx.lineWidth = isHeld ? 2 : 1;
+      ctx.beginPath(); ctx.moveTo(t1x, t1y); ctx.lineTo(t2x, t2y); ctx.stroke();
+      if (isHeld) {
+        ctx.strokeStyle = 'rgba(232,171,65,0.8)'; ctx.lineWidth = 1.4;
+        ctx.beginPath(); ctx.arc(x, y, 16, 0, 7); ctx.stroke();
+        ctx.strokeStyle = 'rgba(232,171,65,0.25)';
+        const [dx1, dy1] = this._xy(o.lon, rAsp);
+        ctx.beginPath(); ctx.moveTo(dx1, dy1); ctx.lineTo(x, y); ctx.stroke();
+      }
+      const atRest = !this.held && !this.playing;
+      const elemColor = this._elemOf(o.lon);
+      const deep = o.lvl > 0 && !isHeld;
+      const base = 23 - 1.2 * Math.log10(this.PERIODS[o.n]);
+      ctx.fillStyle = 'rgba(14,9,36,0.35)';
+      ctx.beginPath(); ctx.arc(x, y, deep ? 9 : 11, 0, 7); ctx.fill();
+      if (deep) ctx.globalAlpha = 0.78;
+      ctx.fillStyle = isHeld ? '#e8ab41' : atRest ? elemColor : (o.n === 'Sun' || o.n === 'Moon') ? '#f6f2e4' : '#dcd7f0';
+      ctx.shadowColor = isHeld ? '#e8ab41' : atRest ? elemColor : 'rgba(240,238,252,0.8)';
+      ctx.shadowBlur = isHeld ? 14 : deep ? 3 : 6;
+      ctx.font = (isHeld ? 'bold ' : '') + (isHeld ? base + 2 : deep ? base - 1.5 : base).toFixed(1) + 'px "Noto Sans Symbols 2","Segoe UI Symbol","Apple Symbols",serif';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(this.GLYPH[o.n], x, y);
+      ctx.shadowBlur = 0;
+      ctx.globalAlpha = 1;
+      this._screen[o.n] = [x, y];
+    }
+
+    if (this._pulse && this.held && this._screen[this.held]) {
+      const age = (performance.now() - this._pulse.t0) / 300;
+      if (age < 1) {
+        const k2 = this._pulse.kind;
+        const [px, py] = this._screen[this.held];
+        const rr = 16 + age * (k2 === 'deg' ? 9 : k2 === 'sign' ? 18 : 30);
+        ctx.strokeStyle = k2 === 'aspect' ? '#f2f0fc' : '#e8ab41';
+        ctx.globalAlpha = (1 - age) * (k2 === 'deg' ? 0.3 : k2 === 'sign' ? 0.55 : 0.85);
+        ctx.lineWidth = k2 === 'aspect' ? 2 : 1.3;
+        ctx.beginPath(); ctx.arc(px, py, rr, 0, 7); ctx.stroke();
+        ctx.globalAlpha = 1;
+      } else this._pulse = null;
+    }
+
+    ctx.strokeStyle = 'rgba(190,184,226,0.12)'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.arc(cx, cy, 42, 0, 7); ctx.stroke();
+    ctx.fillStyle = 'rgba(236,232,248,0.32)';
+    if (this.playing) {
+      ctx.fillRect(cx - 8, cy - 9, 5, 18); ctx.fillRect(cx + 3, cy - 9, 5, 18);
+    } else {
+      ctx.beginPath(); ctx.moveTo(cx - 6, cy - 10); ctx.lineTo(cx + 10, cy); ctx.lineTo(cx - 6, cy + 10); ctx.closePath(); ctx.fill();
+    }
+  }
+
+  _fmtShort(lon) {
+    const s = Math.floor(this.norm(lon) / 30), d = Math.floor(this.norm(lon) % 30);
+    return d + '\u00B0' + this.SIGNS[s] + '\uFE0E';
+  }
+  _fmtLong(lon) {
+    const L = this.norm(lon), s = Math.floor(L / 30), d = Math.floor(L % 30), m = Math.floor((L % 1) * 60);
+    return d + '\u00B0 ' + String(m).padStart(2, '0') + '\u2032 ' + this.SIGN_NAMES[s];
+  }
+  _humanPeriod(d) {
+    if (d < 0.94) return (d * 24).toFixed(1) + ' hours';
+    if (d < 1.5) return '1 day';
+    if (d < 40) return d.toFixed(1) + ' days';
+    if (d < 400) return Math.round(d) + ' days';
+    return (d / 365.25).toFixed(1) + ' years';
+  }
+
+  _readouts() {
+    const set = (ref, key, val) => {
+      if (this._lastReadout[key] !== val && ref.current) { ref.current.textContent = val; this._lastReadout[key] = val; }
+    };
+    const setH = (ref, key, val) => {
+      if (this._lastReadout[key] !== val && ref.current) { ref.current.innerHTML = val; this._lastReadout[key] = val; }
+    };
+    const dte = this.eph.jdToDate(this.jd);
+    set(this.civilRef, 'civil',
+      dte.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' }) +
+      ' \u00B7 ' + dte.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit', second: '2-digit' }));
+    if (this.held) {
+      const isAsc = this.held === 'ASC';
+      const lon = isAsc ? this.asc : this.pos[this.held];
+      let rx = '';
+      if (!isAsc && !this.NO_RX.includes(this.held)) {
+        const ahead = this.eph.positions(this.jd + 0.2)[this.held];
+        if (this.wrap(ahead - lon) < 0) rx = ' \u211E';
+      }
+      setH(this.skyRef, 'sky', (isAsc ? '<span style="color:' + this._elemOf(this.asc) + '">As</span>' : this.GLYPH[this.held]) + ' ' + this._fmtLong(lon) + rx);
+      const asp = this._aspectStatus();
+      const label = isAsc ? 'HORIZON' : (this.LABEL[this.held] || this.held).toUpperCase();
+      set(this.gearRef, 'gear', asp ? label + ' ' + asp : label + ' HAND \u00B7 1 SWEEP = ' + this._humanPeriod(this.PERIODS[this.held] * (this._gearMult || 1)));
+    } else {
+      const sep = '<span style="color:#5a5090">  \u00B7  </span>';
+      setH(this.skyRef, 'sky',
+        '<span style="color:' + this._elemOf(this.pos.Sun) + '">\u2609 ' + this._fmtShort(this.pos.Sun) + '</span>' + sep +
+        '<span style="color:' + this._elemOf(this.pos.Moon) + '">\u263D ' + this._fmtShort(this.pos.Moon) + '</span>' + sep +
+        '<span style="color:' + this._elemOf(this.asc) + '">As ' + this._fmtShort(this.asc) + '</span>');
+      const v = this.state.settings.playSpeed;
+      set(this.gearRef, 'gear', this.playing ? 'PLAYING \u00B7 ' + v + (this.frame === 'horizon' ? ' MIN / SEC' : ' H / SEC') : '\u00A0');
+    }
+  }
+}
+</script>
+</body>
+</html>
